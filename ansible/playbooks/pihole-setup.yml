@@ -1,74 +1,82 @@
-  - name: Install Pihole
-    hosts: sentinel
-    become: true
-
-    tasks:
-      - name: Install dependencies
-        apt:
-          name:
-            - curl
-            - git
-            - lighttpd
-          state: present
-          update_cache: true
-
-      - name: Create pihole config directory
-        file:
-          path: /etc/pihole
-          state: directory
-          mode: '0755'
-
-      - name: Create setupVars.conf
-        copy:
-          dest: /etc/pihole/setupVars.conf
-          content: |
-            PIHOLE_INTERFACE=eth0
-            IPV4_ADDRESS=192.168.178.4/24
-            IPV6_ADDRESS=
-            PIHOLE_DNS_1=1.1.1.1
-            PIHOLE_DNS_2=8.8.8.8
-            QUERY_LOGGING=true
-            INSTALL_WEB_SERVER=true
-            INSTALL_WEB_INTERFACE=true
-            LIGHTTPD_ENABLED=true
-            WEBPASSWORD={{ pihole_password | hash('sha256') }}
-
-      - name: Set pihole password
-        shell: pihole setpassword "{{ pihole_password }}"
-        no_log: true
-
-      - name: Install Pihole unattended
-        shell: curl -sSL https://install.pi-hole.net | bash /dev/stdin --unattended
-        args:
-          creates: /usr/local/bin/pihole
+- name: Install Pihole
+  hosts: sentinel
+  become: true
 
   tasks:
-    - name: Aggiungi le Adlist tramite API v6
+    - name: Install dependencies
+      apt:
+        name:
+          - curl
+          - git
+          - lighttpd
+        state: present
+        update_cache: true
+
+    - name: Create pihole config directory
+      file:
+        path: /etc/pihole
+        state: directory
+        mode: '0755'
+
+    - name: Create setupVars.conf
+      copy:
+        dest: /etc/pihole/setupVars.conf
+        content: |
+          PIHOLE_INTERFACE=eth0
+          IPV4_ADDRESS=192.168.178.4/24
+          IPV6_ADDRESS=
+          PIHOLE_DNS_1=1.1.1.1
+          PIHOLE_DNS_2=8.8.8.8
+          QUERY_LOGGING=true
+          INSTALL_WEB_SERVER=true
+          INSTALL_WEB_INTERFACE=true
+          LIGHTTPD_ENABLED=true
+          WEBPASSWORD={{ pihole_password | hash('sha256') | hash('sha256') }}
+
+    - name: Install Pihole unattended
+      shell: curl -sSL https://install.pi-hole.net | bash /dev/stdin --unattended
+      args:
+        creates: /usr/local/bin/pihole
+
+    - name: Set pihole password
+      shell: pihole setpassword "{{ pihole_password }}"
+      no_log: true
+
+    - name: Authenticate to Pihole API v6
+      ansible.builtin.uri:
+        url: "{{ pihole_base_url }}/api/auth"
+        method: POST
+        body_format: json
+        body:
+          password: "{{ pihole_password }}"
+        status_code: [200]
+      register: pihole_auth
+      no_log: true
+
+    - name: Add adlists via API v6
       ansible.builtin.uri:
         url: "{{ pihole_base_url }}/api/adlists"
         method: POST
         headers:
-          X-FTL-Auth: "{{ pihole_api_token }}"
+          X-FTL-Auth: "{{ pihole_auth.json.session.sid }}"
           Content-Type: "application/json"
         body_format: json
         body:
           address: "{{ item }}"
-          comment: "Gestito da Ansible v6 API"
+          comment: "Managed by Ansible"
           enabled: true
-        # Il codice 200 indica successo, 409 indica che la lista esiste già (dipende dal setup dell'endpoint v6)
-        status_code: [200, 201, 409]
+        status_code: [201, 409]
       loop: "{{ pihole_adlists }}"
-      register: adlist_response
-      # Consideriamo cambiato il task solo se almeno una lista è stata creata ex-novo (es. codice 201)
-      changed_when: "item.status == 201"
-      notify: Rigenera Gravity via API
+      register: pihole_adlists_result
+      changed_when: pihole_adlists_result.status == 201
+      notify: Update gravity
 
   handlers:
-    - name: Rigenera Gravity via API
+    - name: Update gravity
       ansible.builtin.uri:
         url: "{{ pihole_base_url }}/api/action/gravity"
         method: POST
         headers:
-          X-FTL-Auth: "{{ pihole_api_token }}"
+          X-FTL-Auth: "{{ pihole_auth.json.session.sid }}"
           Content-Type: "application/json"
         status_code: [200]

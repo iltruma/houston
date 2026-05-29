@@ -1,7 +1,9 @@
   resource "proxmox_virtual_environment_container" "pihole" {
-    description = "Pihole DNS + DHCP"
-    node_name   = var.proxmox_node
-    vm_id       = 200
+    description  = "Pihole DNS + DHCP"
+    node_name    = var.proxmox_node
+    vm_id        = 200
+    unprivileged = true
+    started      = true
 
     initialization {
       hostname = "sentinel"

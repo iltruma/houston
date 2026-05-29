@@ -39,6 +39,30 @@ kubectl get nodes
 kubectl get pods -A
 ```
 
+## Commit Naming Convention
+
+Formato: `<tipo>(<scope>): <descrizione>`
+
+**Scope per layer:**
+
+| Scope       | Quando usarlo                              |
+|-------------|--------------------------------------------|
+| `terraform` | Modifiche a VM, LXC, network, variabili TF |
+| `ansible`   | Playbook, inventory, group_vars            |
+| `k8s`       | Manifesti Kubernetes, Helm chart, ArgoCD   |
+| `ci`        | GitHub Actions workflow                    |
+| `docs`      | File in `docs/`                            |
+
+**Esempi:**
+```
+feat(terraform): add pihole LXC container
+fix(ansible): correct task order in pihole-setup
+chore(k8s): update argocd app manifest
+docs: add proxmox install guide
+```
+
+Lo scope è opzionale per modifiche trasversali (es. rinomina globale, refactor struttura repo).
+
 ## Network
 
 - Houston host: 192.168.178.2
