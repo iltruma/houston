@@ -1,0 +1,33 @@
+  - name: Prepare k3s node
+    hosts: iss
+    become: true
+
+    tasks:
+      - name: Set hostname
+        hostname:
+          name: iss
+
+      - name: Install qemu-guest-agent
+        apt:
+          name: qemu-guest-agent
+          state: present
+          update_cache: true
+
+      - name: Start and enable qemu-guest-agent
+        service:
+          name: qemu-guest-agent
+          state: started
+          enabled: true
+        ignore_errors: true
+
+      - name: Allow debian user to sudo without password
+        lineinfile:
+          path: /etc/sudoers.d/debian
+          line: "debian ALL=(ALL) NOPASSWD:ALL"
+          create: true
+          mode: '0440'
+
+      - name: Install k3s
+        shell: curl -sfL https://get.k3s.io | sh -
+        args:
+          creates: /usr/local/bin/k3s
