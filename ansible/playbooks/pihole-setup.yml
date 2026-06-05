@@ -17,6 +17,15 @@
         state: directory
         mode: '0755'
 
+    # setupVars.conf è un artefatto Pi-hole v5: in v6 la config "vera" vive in
+    # pihole.toml (generato dall'installer). Lo teniamo perché basic-install.sh
+    # lo legge ancora per girare in modalità --unattended (semina interfaccia,
+    # web server, ecc.) ed evitare i dialoghi interattivi.
+    #
+    # da verificare: su v6 NON è garantito che gli upstream DNS qui sotto
+    # (PIHOLE_DNS_1/2) vengano migrati in pihole.toml. Dopo l'install controlla
+    # con:  grep -A3 "\[dns\]" /etc/pihole/pihole.toml
+    # e, se mancano, vanno impostati lì (la fonte di verità in v6).
     - name: Create setupVars.conf for unattended install
       ansible.builtin.copy:
         dest: /etc/pihole/setupVars.conf
