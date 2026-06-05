@@ -32,16 +32,16 @@ sudo dd bs=4M if=proxmox-ve_*.iso of=/dev/sdX status=progress
 7. Password root e email amministratore
 8. Configurazione rete:
    - Management Interface: la porta Ethernet (es. `enp1s0`)
-   - Hostname: `pve.local`
-   - IP Address: `192.168.1.100/24`
-   - Gateway: `192.168.1.1`
-   - DNS Server: `192.168.1.1` (temporaneo, poi sarà Pihole)
+   - Hostname: `houston.internal`
+   - IP Address: `192.168.178.2/24`
+   - Gateway: `192.168.178.1`
+   - DNS Server: `192.168.178.1` (temporaneo, poi sarà Pi-hole su `.4`)
 
 ## 4. Post-Installazione
 
 ### Accesso alla Web UI
 
-Dopo il reboot, accedere a: `https://192.168.1.100:8006`
+Dopo il reboot, accedere a: `https://192.168.178.2:8006`
 - Username: `root`
 - Realm: `Linux PAM`
 
@@ -55,8 +55,13 @@ sed -i 's/^deb/#deb/' /etc/apt/sources.list.d/pve-enterprise.list
 ### Aggiungere No-Subscription Repository
 
 ```bash
-echo "deb http://download.proxmox.com/debian/pve bookworm pve-no-subscription" > /etc/apt/sources.list.d/pve-no-subscription.list
+# Debian 13 "trixie" → Proxmox VE 9.x
+echo "deb http://download.proxmox.com/debian/pve trixie pve-no-subscription" > /etc/apt/sources.list.d/pve-no-subscription.list
 ```
+
+> **da verificare**: su Proxmox VE 9 i repository usano il nuovo formato deb822
+> (`/etc/apt/sources.list.d/*.sources`) invece dei classici `.list`. Controlla
+> con `ls /etc/apt/sources.list.d/` quale formato è presente sulla tua installazione.
 
 ### Aggiornare il sistema
 
@@ -86,10 +91,10 @@ pvesm status
 ### Scaricare template container
 
 ```bash
-# Template Debian per LXC
+# Template Debian 13 per LXC (quello referenziato dai file Terraform)
 pveam update
 pveam available --section system | grep debian
-pveam download local debian-12-standard_12.7-1_amd64.tar.zst
+pveam download local debian-13-standard_13.1-2_amd64.tar.zst
 ```
 
 ## 6. Abilitare IOMMU (opzionale, per PCIe passthrough futuro)
@@ -105,7 +110,7 @@ reboot
 
 ## Verifica
 
-- [ ] Web UI accessibile su `https://192.168.1.100:8006`
+- [ ] Web UI accessibile su `https://192.168.178.2:8006`
 - [ ] `pveversion` mostra la versione corretta
 - [ ] `apt update` funziona senza errori
 - [ ] Storage `local` e `local-lvm` visibili

@@ -7,14 +7,15 @@ Internet
    │
    ▼
 ┌──────────┐
-│  Router   │  192.168.1.1 (Gateway + DHCP temporaneo)
+│  Router   │  192.168.178.1 (Gateway + DHCP per i client)
 └────┬─────┘
      │
-     ├── 192.168.1.100  Proxmox (host)
-     ├── 192.168.1.101  VM k3s
-     ├── 192.168.1.2    LXC Pihole (DNS)
+     ├── 192.168.178.2   houston   Proxmox VE (host)
+     ├── 192.168.178.3   iss       VM   k3s single-node
+     ├── 192.168.178.4   sentinel  LXC  Pi-hole (DNS)
+     ├── 192.168.178.5   vanguard  LXC  step-ca (CA di rete)
      │
-     └── 192.168.1.x    Altri dispositivi (DHCP)
+     └── 192.168.178.x   Altri dispositivi (DHCP dal router)
 ```
 
 ## Configurazione Bridge di Rete su Proxmox
@@ -29,66 +30,73 @@ iface enp1s0 inet manual
 
 auto vmbr0
 iface vmbr0 inet static
-    address 192.168.1.100/24
-    gateway 192.168.1.1
+    address 192.168.178.2/24
+    gateway 192.168.178.1
     bridge-ports enp1s0
     bridge-stp off
     bridge-fd 0
 ```
 
 > `vmbr0` è il bridge Linux che permette a VM e container di accedere alla rete fisica.
+> `enp1s0` è il nome dell'interfaccia fisica: **da verificare** sul tuo hardware (`ip link`).
 
 ## IP Statici
 
-Tutti gli IP sono assegnati staticamente (non via DHCP) per stabilità:
+Gli host dell'homelab hanno IP statici (assegnati da Terraform/Proxmox, non via DHCP)
+per stabilità. I client generici prendono l'IP dal DHCP del router.
 
-| Host | IP | MAC (opzionale) |
-|------|-----|-----------------|
-| Proxmox | 192.168.1.100 | - |
-| k3s VM | 192.168.1.101 | - |
-| Pihole LXC | 192.168.1.2 | - |
+| Host       | Ruolo                      | Tipo | IP            |
+|------------|----------------------------|------|---------------|
+| `houston`  | Hypervisor Proxmox VE      | host | 192.168.178.2 |
+| `iss`      | Cluster k3s (single-node)  | VM   | 192.168.178.3 |
+| `sentinel` | Pi-hole (DNS + adlists)    | LXC  | 192.168.178.4 |
+| `vanguard` | step-ca (CA di rete, ACME) | LXC  | 192.168.178.5 |
 
 ## DNS
 
-### Prima di Pihole
-Il DNS punta al router: `192.168.1.1`
+### Prima di Pi-hole
+Il DNS punta al router: `192.168.178.1`
 
-### Dopo Pihole attivo
-1. Configurare il router per usare `192.168.1.2` come DNS primario
-2. Oppure configurare il DHCP del router per distribuire `192.168.1.2` come DNS
-3. In Pihole, impostare upstream DNS (es. `1.1.1.1`, `8.8.8.8`)
+### Dopo Pi-hole attivo
+1. Configurare il router per usare `192.168.178.4` (sentinel) come DNS primario,
+   oppure distribuirlo via DHCP a tutti i client.
+2. In Pi-hole, impostare l'upstream DNS (es. `1.1.1.1`, `8.8.8.8` — già in
+   `setupVars.conf` del playbook).
 
 ## Firewall (opzionale)
 
-Proxmox ha un firewall integrato. Per l'homelab locale si può lasciare disattivato, ma se si vuole:
+Proxmox ha un firewall integrato. Per l'homelab locale si può lasciare disattivato,
+ma se si vuole abilitarlo le regole minime per il nodo sono:
 
-```bash
-# Abilitare firewall a livello datacenter
+```
 # Datacenter → Firewall → Options → Firewall: Yes
-
-# Regole minime per il nodo
-# Allow SSH
+# Allow SSH (22)
 # Allow Web UI (8006)
 # Allow ICMP (ping)
 ```
 
-## DNS locale personalizzato (via Pihole)
+## DNS locale personalizzato (via Pi-hole)
 
-Dopo che Pihole è attivo, aggiungere record DNS locali:
+I record DNS locali sono gestiti **dichiarativamente** dal playbook
+`pihole-setup.yml` (variabile `pihole_dns_records` in
+`ansible/group_vars/all/vars.yml`), sul dominio interno **`.internal`**:
 
 ```
-pve.local         → 192.168.1.100
-k3s.local         → 192.168.1.101
-pihole.local      → 192.168.1.2
-argocd.local      → 192.168.1.101
-headroom.local    → 192.168.1.101
+houston.internal    → 192.168.178.2
+iss.internal        → 192.168.178.3
+sentinel.internal   → 192.168.178.4
+vanguard.internal   → 192.168.178.5
 ```
 
-Questi record si aggiungono in Pihole → Local DNS → DNS Records.
+> Il dominio `.internal` è lo standard de-facto per le reti private (riserva ICANN
+> proposta) ed evita i problemi di *DNS rebind protection* dei router domestici
+> (es. Fritz!Box) che bloccano risposte con IP privati su TLD sconosciuti.
+> I record dei servizi k8s (es. `argocd.internal`) si aggiungeranno con gli sprint
+> di Fase 1+ tramite Ingress/cert-manager.
 
 ## Verifica
 
-- [ ] Proxmox raggiungibile via `ping 192.168.1.100`
+- [ ] Proxmox raggiungibile via `ping 192.168.178.2`
 - [ ] VM e LXC hanno connettività internet
-- [ ] Risoluzione DNS funzionante da tutti i nodi
+- [ ] Risoluzione DNS funzionante da tutti i nodi (`dig iss.internal @192.168.178.4`)
 - [ ] Dispositivi sulla rete riescono ad accedere alle risorse dell'homelab
