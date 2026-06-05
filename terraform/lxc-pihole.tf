@@ -5,6 +5,10 @@
     unprivileged = true
     started      = true
 
+    features {
+      nesting = true
+    }
+
     initialization {
       hostname = "sentinel"
 
@@ -25,7 +29,7 @@
     }
 
     memory {
-      dedicated = 256
+      dedicated = 512
     }
 
     disk {

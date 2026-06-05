@@ -1,8 +1,7 @@
-pihole_base_url: "http://192.168.178.4"
+pihole_base_url: "https://192.168.178.4"
 
 pihole_adlists:
   - "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
   - "https://v.firebog.net/hosts/AdguardDNS.txt"
   - "https://v.firebog.net/hosts/Easyprivacy.txt"
   - "https://v.firebog.net/hosts/Prigent-Crypto.txt"
-  - "https://raw.githubusercontent.com/DandelionSprout/adfilt/master/ClearURLs%20for%20Pi-hole/clearurls_pihole.txt"
