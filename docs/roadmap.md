@@ -31,7 +31,6 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | S2     | k3s            | VM `iss`       | 🟡    | —          |
 | S3     | cert-manager   | k3s            | 🔴    | S1, S2     |
 | S4     | ArgoCD         | k3s            | 🔴    | S2         |
-| S5     | headroom       | k3s            | 🔴    | S4         |
 
 **S0 — Pi-hole: chiudere il setup**
 - Fix del task "Add adlists via API" (errori `UNIQUE`/`FOREIGN KEY` su gravity DB).
@@ -53,9 +52,6 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 - Install ArgoCD + pattern *app-of-apps* (una root `Application` che punta a `k8s/`).
 - DoD: ArgoCD UI raggiungibile via Ingress TLS; la root app sincronizza dal repo.
 
-**S5 — headroom: primo carico applicativo**
-- Deploy via ArgoCD con Ingress TLS. (Dettagli immagine/porta/env da verificare sul repo upstream chopratejas/headroom.)
-- DoD: headroom raggiungibile e gestito da ArgoCD (sync = Healthy).
 
 ---
 
