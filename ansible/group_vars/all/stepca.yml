@@ -5,10 +5,10 @@
 
 # Internal domain used across the homelab. Changing it here updates every
 # downstream reference (CA SANs, cert-manager issuer, Ingress hosts).
-# NOTE: only "home.arpa" is IANA-reserved for home use; "iris.lan" works fine
-# on a LAN that never queries public resolvers. Add the matching A-records in
-# Pi-hole "Local DNS".
-homelab_domain: "iris.lan"
+# NOTE: ".internal" is the de-facto standard TLD for private networks (proposed
+# ICANN reservation). It avoids DNS rebind protection issues on home routers
+# (e.g. Fritz!Box) that block private-IP responses for unknown TLDs.
+homelab_domain: "internal"
 
 # --- Smallstep versions — VERIFY latest before deploy:
 #     https://github.com/smallstep/cli/releases
@@ -19,10 +19,10 @@ step_ca_version: "0.30.2"      # the `step-ca` server daemon
 # --- CA identity
 stepca_name: "Houston Homelab CA"
 stepca_dns_names:              # SANs the CA server is reachable as
-  - "vanguard.iris.lan"
+  - "vanguard.internal"
   - "192.168.178.5"
 stepca_listen_address: ":9000"
-# => ACME directory: https://vanguard.iris.lan:9000/acme/acme/directory
+# => ACME directory: https://vanguard.internal:9000/acme/acme/directory
 
 # ACME provisioner name. cert-manager references this in the ClusterIssuer URL.
 stepca_acme_provisioner: "acme"

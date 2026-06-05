@@ -34,7 +34,7 @@ Terraform, configurazione in Ansible, applicazioni in Kubernetes via GitOps.
                     └─ headroom + app (Fasi 2-4)
 ```
 
-Dominio interno: **`iris.lan`** (record locali in Pi-hole).
+Dominio interno: **`.internal`** (record locali in Pi-hole).
 
 ## Struttura
 

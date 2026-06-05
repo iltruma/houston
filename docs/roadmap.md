@@ -16,7 +16,7 @@ si passa al successivo. Le dipendenze determinano l'ordine.
 | `vanguard` | step-ca (CA di rete, ACME) | LXC  | 192.168.178.5 |
 
 - Gateway: `192.168.178.1`
-- Dominio interno: **`iris.lan`** (record locali gestiti in Pi-hole "Local DNS")
+- Dominio interno: **`.internal`** (record locali gestiti in Pi-hole "Local DNS")
 
 ---
 
@@ -39,7 +39,7 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 
 **S1 — step-ca: CA di rete**
 - Terraform: LXC `vanguard`. Ansible: install `step`/`step-ca`, init CA (root+intermediate), provisioner ACME, systemd.
-- DoD: ACME directory raggiungibile su `https://vanguard.iris.lan:9000/acme/acme/directory`; root CA esportata e installata nel trust store di almeno un client.
+- DoD: ACME directory raggiungibile su `https://vanguard.internal:9000/acme/acme/directory`; root CA esportata e installata nel trust store di almeno un client.
 
 **S2 — k3s: completare il bootstrap**
 - Ansible: fetch del kubeconfig in locale, riscrittura IP server, verifica nodo `Ready`.
@@ -69,7 +69,7 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | S9     | Homepage              | dashboard dichiarativa (YAML in Git) dei servizi |
 | S10    | Cloudflare Tunnel     | accesso remoto inbound senza aprire porte |
 
-⚠️ **Cloudflare Tunnel** richiede un **dominio pubblico su Cloudflare** (non `iris.lan`).
+⚠️ **Cloudflare Tunnel** richiede un **dominio pubblico su Cloudflare** (non `.internal`).
 Espone verso l'esterno solo i servizi scelti; gira come `cloudflared` nel cluster.
 
 ---
