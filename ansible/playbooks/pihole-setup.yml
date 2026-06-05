@@ -104,6 +104,23 @@
       changed_when: pihole_adlists_result.status == 201
       notify: Update gravity
 
+    # Pi-hole v6 local DNS records — stored in FTL config, not in custom.list.
+    # PUT /api/config/dns/hosts/{record} is idempotent: 200 = already exists, 201 = created.
+    # The record format is "IP hostname" URL-encoded in the path.
+    # da verificare: se l'API risponde 4xx, ispezionare con ansible -v e confrontare
+    #   con GET https://192.168.178.4/api/config/dns/hosts
+    - name: Add local DNS records
+      ansible.builtin.uri:
+        url: "{{ pihole_base_url }}/api/config/dns/hosts/{{ item.ip | urlencode }}%20{{ item.hostname | urlencode }}"
+        method: PUT
+        headers:
+          X-FTL-SID: "{{ pihole_auth.json.session.sid }}"
+        status_code: [200, 201]
+        validate_certs: false
+      loop: "{{ pihole_dns_records }}"
+      register: pihole_dns_result
+      changed_when: pihole_dns_result.status == 201
+
   handlers:
     - name: Update gravity
       ansible.builtin.uri:

@@ -16,3 +16,4 @@ kubeconfig
 *.pem
 *.key
 .env
+certs/
