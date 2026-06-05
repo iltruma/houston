@@ -13,8 +13,8 @@ homelab_domain: "iris.lan"
 # --- Smallstep versions — VERIFY latest before deploy:
 #     https://github.com/smallstep/cli/releases
 #     https://github.com/smallstep/certificates/releases
-step_cli_version: "0.28.2"     # the `step` command-line client
-step_ca_version: "0.28.1"      # the `step-ca` server daemon
+step_cli_version: "0.30.2"     # the `step` command-line client
+step_ca_version: "0.30.2"      # the `step-ca` server daemon
 
 # --- CA identity
 stepca_name: "Houston Homelab CA"

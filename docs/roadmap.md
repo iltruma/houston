@@ -26,8 +26,8 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 
 | Sprint | Servizio       | Dove           | Stato | Dipende da |
 |--------|----------------|----------------|-------|------------|
-| S0     | Pi-hole        | LXC `sentinel` | 🟡    | —          |
-| S1     | step-ca        | LXC `vanguard` | 🔴    | —          |
+| S0     | Pi-hole        | LXC `sentinel` | 🟢    | —          |
+| S1     | step-ca        | LXC `vanguard` | 🟢    | —          |
 | S2     | k3s            | VM `iss`       | 🟡    | —          |
 | S3     | cert-manager   | k3s            | 🔴    | S1, S2     |
 | S4     | ArgoCD         | k3s            | 🔴    | S2         |
