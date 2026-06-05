@@ -1,5 +1,20 @@
 # Houston Homelab
 
+## Modalità di lavoro (IMPORTANTE)
+
+Questo repo è anche un percorso di **apprendimento**: l'obiettivo non è solo
+avere l'infrastruttura, ma capirla. Quindi:
+
+- **Spiega ogni file PRIMA di crearlo o modificarlo.** Descrivi a cosa serve,
+  cosa contiene e perché, poi crealo. In alternativa costruiamolo insieme un
+  pezzo alla volta.
+- Niente raffiche di file creati in blocco senza spiegazione.
+- Procedi un passo alla volta, lasciando spazio a domande e verifiche.
+- **Prima la lista dei servizi, poi i file.** Si lavora per **sprint** atomici
+  guidati da [docs/roadmap.md](docs/roadmap.md): un servizio alla volta, con
+  Definition of Done, commit, poi il successivo. Non saltare avanti nelle fasi.
+- Segnala sempre i punti incerti come "da verificare", non darli per oro colato.
+
 ## Progetto
 
 Homelab su Dell Optiplex 3050 (i5-6500T, 16GB RAM, 500GB SSD) con Proxmox VE come hypervisor.
