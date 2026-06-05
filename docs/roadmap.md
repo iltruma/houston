@@ -31,10 +31,13 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | S2     | k3s            | VM `iss`       | 🟡    | —          |
 | S3     | cert-manager   | k3s            | 🔴    | S1, S2     |
 | S4     | ArgoCD         | k3s            | 🔴    | S2         |
+| S5     | Secrets mgmt   | k3s            | 🔴    | S4         |
+| S6     | Backup / DR    | houston + k3s  | 🔴    | S1, S2     |
 
-**S0 — Pi-hole: chiudere il setup** · doc: [03-pihole.md](03-pihole.md)
-- Fix del task "Add adlists via API" (errori `UNIQUE`/`FOREIGN KEY` su gravity DB).
+**S0 — Pi-hole** · doc: [03-pihole.md](03-pihole.md)
+- Operativo: install v6 unattended, HTTPS sulla web UI, adlist e record DNS `.internal` via API.
 - DoD: `ansible-playbook pihole-setup.yml` gira pulito e idempotente; adlist presenti; gravity aggiornato.
+- da verificare: che gli upstream DNS finiscano in `pihole.toml` su v6 (vedi [03-pihole.md](03-pihole.md) §6).
 
 **S1 — step-ca: CA di rete** · doc: [04-stepca.md](04-stepca.md)
 - Terraform: LXC `vanguard`. Ansible: install `step`/`step-ca`, init CA (root+intermediate), provisioner ACME, systemd.
@@ -52,6 +55,18 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 - Install ArgoCD + pattern *app-of-apps* (una root `Application` che punta a `k8s/`).
 - DoD: ArgoCD UI raggiungibile via Ingress TLS; la root app sincronizza dal repo.
 
+**S5 — Secrets management: Sealed Secrets**
+- Controller Sealed Secrets installato via ArgoCD; i `SealedSecret` cifrati si
+  committano in Git, il controller li decifra dentro il cluster.
+- DoD: un secret di test, cifrato e committato in Git, viene materializzato come
+  `Secret` nel cluster; nessuna credenziale in chiaro nel repo.
+
+**S6 — Backup / disaster recovery**
+- Backup della root/intermediate CA (`/etc/step-ca` su `vanguard`), dello stato di
+  k3s e dei volumi dati persistenti; restore verificato.
+- DoD: esiste un backup ripristinabile di CA e stato cluster; il restore è stato
+  testato almeno una volta.
+
 
 ---
 
@@ -59,14 +74,21 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 
 | Sprint | Servizio              | Note |
 |--------|-----------------------|------|
-| S6     | Prometheus + Grafana  | `kube-prometheus-stack` via ArgoCD |
-| S7     | Loki                  | log aggregation, datasource in Grafana |
-| S8     | Uptime Kuma           | status page / uptime |
-| S9     | Homepage              | dashboard dichiarativa (YAML in Git) dei servizi |
-| S10    | Cloudflare Tunnel     | accesso remoto inbound senza aprire porte |
+| S7     | Prometheus + Grafana  | `kube-prometheus-stack` via ArgoCD |
+| S8     | Host monitoring       | `node_exporter` su `houston`/`sentinel`/`vanguard` → scrape da Prometheus (Proxmox + LXC, non solo il cluster) |
+| S9     | Loki                  | log aggregation, datasource in Grafana |
+| S10    | Uptime Kuma           | status page / uptime |
+| S11    | Homepage              | dashboard dichiarativa (YAML in Git) dei servizi |
+| S12    | Cloudflare Tunnel     | accesso remoto inbound senza aprire porte |
+
+ℹ️ **Persistenza**: i servizi con stato (Prometheus, Grafana, Loki, ArgoCD) usano il
+provisioner `local-path` di k3s (SSD locale), sufficiente su single-node. Longhorn/NFS
+(Fase 4) serve per i volumi grandi della media library, **non** è prerequisito qui.
 
 ⚠️ **Cloudflare Tunnel** richiede un **dominio pubblico su Cloudflare** (non `.internal`).
 Espone verso l'esterno solo i servizi scelti; gira come `cloudflared` nel cluster.
+I cert interni `.internal` della CA **non** valgono verso l'esterno: per i servizi
+pubblicati serve un certificato pubblico (Cloudflare origin cert o Let's Encrypt).
 
 ---
 
@@ -74,7 +96,7 @@ Espone verso l'esterno solo i servizi scelti; gira come `cloudflared` nel cluste
 
 | Sprint | Servizio | Note |
 |--------|----------|------|
-| S11    | Deploy app personale/i | una o più app proprie sul k3s, via ArgoCD, con Ingress TLS dalla CA |
+| S13    | Deploy app personale/i | una o più app proprie sul k3s, via ArgoCD, con Ingress TLS dalla CA |
 
 Obiettivo: usare tutto il backbone (GitOps + TLS + ingress) per pubblicare codice tuo.
 
@@ -84,13 +106,13 @@ Obiettivo: usare tutto il backbone (GitOps + TLS + ingress) per pubblicare codic
 
 | Sprint | Servizio                | Note |
 |--------|-------------------------|------|
-| S12    | Storage persistente     | **prerequisito**: Longhorn o NFS verso disco/NAS |
-| S13    | Jellyfin                | media server, transcoding HW via Intel QuickSync |
-| S14    | Download stack          | qBittorrent (⚠️ dietro VPN egress) + Prowlarr + Sonarr + Radarr + Bazarr |
-| S15    | Jellyseerr              | UI di richiesta film/serie |
+| S14    | Storage persistente     | **prerequisito**: Longhorn o NFS verso disco/NAS |
+| S15    | Jellyfin                | media server, transcoding HW via Intel QuickSync |
+| S16    | Download stack          | qBittorrent (⚠️ dietro VPN egress) + Prowlarr + Sonarr + Radarr + Bazarr |
+| S17    | Jellyseerr              | UI di richiesta film/serie |
 
 ⚠️ **Reality check hardware**: 500GB SSD totali sull'Optiplex non bastano per una
-libreria media (TB). Lo **storage** (S12) va risolto prima — disco aggiuntivo o NAS via NFS.
+libreria media (TB). Lo **storage** (S14) va risolto prima — disco aggiuntivo o NAS via NFS.
 
 ⚠️ **VPN torrent**: il traffico di qBittorrent va instradato su una VPN egress
 (es. Mullvad). È cosa diversa dal Cloudflare Tunnel (che è solo accesso inbound).
