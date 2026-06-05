@@ -8,3 +8,7 @@ all:
       ansible_host: 192.168.178.4
       ansible_user: root
       ansible_ssh_private_key_file: ~/.ssh/id_ed25519
+    vanguard:
+      ansible_host: 192.168.178.5
+      ansible_user: root
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
