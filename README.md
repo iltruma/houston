@@ -31,6 +31,7 @@ Terraform, configurazione in Ansible, applicazioni in Kubernetes via GitOps.
                     ├─ Traefik        (ingress)
                     ├─ cert-manager   (TLS ← step-ca via ACME)
                     ├─ ArgoCD         (app-of-apps)
+                    ├─ Sealed Secrets (secret cifrati in Git)
                     └─ app (Fasi 2-4)
 ```
 
@@ -64,10 +65,10 @@ kubectl get nodes
 
 Costruzione in 4 fasi (dettaglio e Definition of Done in [docs/roadmap.md](docs/roadmap.md)):
 
-1. **Backbone** — Pi-hole, step-ca, k3s, cert-manager, ArgoCD
-2. **Accesso & osservabilità** — Cloudflare Tunnel, Prometheus+Grafana, Loki, Homepage, Uptime Kuma
+1. **Backbone** — Pi-hole, step-ca, k3s, cert-manager, ArgoCD, Sealed Secrets, backup/DR
+2. **Accesso & osservabilità** — Prometheus+Grafana, host monitoring, Loki, Uptime Kuma, Homepage, Cloudflare Tunnel
 3. **App tue** — deploy di applicazioni proprie sul cluster
-4. **Media** — storage, Jellyfin e download stack
+4. **Media** — storage, Jellyfin, download stack, Jellyseerr
 
 ## Licenza
 
