@@ -32,11 +32,11 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | S3     | cert-manager   | k3s            | 🔴    | S1, S2     |
 | S4     | ArgoCD         | k3s            | 🔴    | S2         |
 
-**S0 — Pi-hole: chiudere il setup**
+**S0 — Pi-hole: chiudere il setup** · doc: [03-pihole.md](03-pihole.md)
 - Fix del task "Add adlists via API" (errori `UNIQUE`/`FOREIGN KEY` su gravity DB).
 - DoD: `ansible-playbook pihole-setup.yml` gira pulito e idempotente; adlist presenti; gravity aggiornato.
 
-**S1 — step-ca: CA di rete**
+**S1 — step-ca: CA di rete** · doc: [04-stepca.md](04-stepca.md)
 - Terraform: LXC `vanguard`. Ansible: install `step`/`step-ca`, init CA (root+intermediate), provisioner ACME, systemd.
 - DoD: ACME directory raggiungibile su `https://vanguard.internal:9000/acme/acme/directory`; root CA esportata e installata nel trust store di almeno un client.
 
@@ -103,5 +103,5 @@ libreria media (TB). Lo **storage** (S12) va risolto prima — disco aggiuntivo 
 terraform/   VM e LXC (Proxmox)        — vm-k3s, lxc-pihole, lxc-stepca
 ansible/     provisioning              — pihole, k3s, step-ca
 k8s/         manifesti + ArgoCD        — (da creare in S3+)
-docs/        guide passo-passo         — install, network, questa roadmap
+docs/        guide passo-passo         — install, network, pihole, stepca, roadmap
 ```
