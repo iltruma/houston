@@ -1,5 +1,5 @@
   resource "proxmox_virtual_environment_container" "pihole" {
-    description  = "Pihole DNS + DHCP"
+    description  = "Pihole DNS"
     node_name    = var.proxmox_node
     vm_id        = 200
     unprivileged = true
