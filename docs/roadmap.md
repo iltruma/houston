@@ -28,7 +28,8 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 |--------|----------------|----------------|-------|------------|
 | S0     | Pi-hole        | LXC `sentinel` | 🟢    | —          |
 | S1     | step-ca        | LXC `vanguard` | 🟢    | —          |
-| S2     | k3s            | VM `iss`       | 🟡    | —          |
+| ST     | VM template    | houston        | 🔴    | —          |
+| S2     | k3s            | VM `iss`       | 🟡    | ST         |
 | S3     | cert-manager   | k3s            | 🔴    | S1, S2     |
 | S4     | ArgoCD         | k3s            | 🔴    | S2         |
 | S5     | Secrets mgmt   | k3s            | 🔴    | S4         |
@@ -42,6 +43,12 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 **S1 — step-ca: CA di rete** · doc: [04-stepca.md](04-stepca.md)
 - Terraform: LXC `vanguard`. Ansible: install `step`/`step-ca`, init CA (root+intermediate), provisioner ACME, systemd.
 - DoD: ACME directory raggiungibile su `https://vanguard.internal:9000/acme/acme/directory`; root CA esportata e installata nel trust store di almeno un client.
+
+**ST — VM template Debian 13 (Packer)** · dir: `packer/debian13-base/`
+- `upload-cloud-image.sh` scarica il cloud image Debian 13 su houston e crea il template grezzo (ID 9000).
+- `packer build` clona 9000, installa `qemu-guest-agent`, fa SSH hardening e cleanup, produce il template finale (ID 9001 — `debian13-base`).
+- Terraform clona da 9001 per tutte le VM.
+- DoD: template `debian13-base` visibile in Proxmox; `terraform plan` non mostra diff sul clone ID.
 
 **S2 — k3s: completare il bootstrap**
 - Ansible: fetch del kubeconfig in locale, riscrittura IP server, verifica nodo `Ready`.
@@ -160,6 +167,7 @@ bloccato dove atteso; DNS `.internal` risolve correttamente dai nuovi IP.
 ## Stato struttura repo
 
 ```
+packer/      VM template (Debian 13)   — upload script + config Packer (sprint ST)
 terraform/   VM e LXC (Proxmox)        — vm-k3s, lxc-pihole, lxc-stepca
 ansible/     provisioning              — pihole, k3s, step-ca
 k8s/         manifesti + ArgoCD        — (da creare in S3+)
