@@ -12,6 +12,9 @@ ansible/*.retry
 kubeconfig
 *.kubeconfig
 
+# Packer
+packer/**/*.pkrvars.hcl
+
 # Secrets
 *.pem
 *.key
