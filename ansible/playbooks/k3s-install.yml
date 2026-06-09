@@ -31,3 +31,40 @@
       shell: curl -sfL https://get.k3s.io | sh -
       args:
         creates: /usr/local/bin/k3s
+
+    - name: Fetch kubeconfig to workstation
+      fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: "{{ lookup('env', 'HOME') }}/.kube/config-k3s"
+        flat: yes
+
+- name: Configure kubeconfig on workstation
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Ensure ~/.kube directory exists
+      file:
+        path: "{{ lookup('env', 'HOME') }}/.kube"
+        state: directory
+        mode: '0700'
+
+    - name: Fix kubeconfig server address
+      replace:
+        path: "{{ lookup('env', 'HOME') }}/.kube/config-k3s"
+        regexp: 'https://127\.0\.0\.1:6443'
+        replace: 'https://192.168.178.3:6443'
+
+    - name: Set kubeconfig permissions
+      file:
+        path: "{{ lookup('env', 'HOME') }}/.kube/config-k3s"
+        mode: '0600'
+
+    - name: Wait for k3s node to be Ready
+      command: kubectl get nodes --kubeconfig {{ lookup('env', 'HOME') }}/.kube/config-k3s
+      register: nodes_output
+      until: "'Ready' in nodes_output.stdout"
+      retries: 10
+      delay: 15
+      changed_when: false
