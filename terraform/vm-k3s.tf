@@ -10,7 +10,7 @@ resource "proxmox_virtual_environment_vm" "k3s" {
   }
 
   clone {
-    vm_id = 9000
+    vm_id = 9001
     full  = true
   }
 
