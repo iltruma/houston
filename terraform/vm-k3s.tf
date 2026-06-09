@@ -41,7 +41,7 @@ resource "proxmox_virtual_environment_vm" "k3s" {
       }
     }
     user_account {
-      username = "debian"
+      username = "ansible"
       keys     = [var.ssh_public_key]
     }
   }
