@@ -32,7 +32,7 @@ source "proxmox-clone" "debian13" {
     bridge = "vmbr0"
   }
 
-  # --- SSH: Packer si connette come utente 'debian' (default cloud image) ---
+  # Packer si connette come 'debian' (utente default del cloud image)
   communicator         = "ssh"
   ssh_username         = "debian"
   ssh_private_key_file = var.ssh_private_key_file
@@ -40,34 +40,65 @@ source "proxmox-clone" "debian13" {
 
   # --- Output ---
   template_name        = "debian13-base"
-  template_description = "Debian 13 Trixie — qemu-guest-agent, SSH hardened. Built with Packer."
+  template_description = "Debian 13 Trixie — base template. qemu-agent, ansible user, SSH hardened."
 }
 
 build {
   name    = "debian13-base"
   sources = ["source.proxmox-clone.debian13"]
 
-  # 1. qemu-guest-agent: permette a Proxmox di comunicare con la VM
-  #    (IP, snapshot consistent, graceful shutdown)
+  # 1. Pacchetti base comuni a tutti i playbook Ansible.
+  #    --no-install-recommends mantiene il template minimale.
   provisioner "shell" {
     inline = [
       "sudo apt-get update -qq",
-      "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y qemu-guest-agent",
+      "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends qemu-guest-agent python3 curl ca-certificates gnupg",
       "sudo systemctl enable qemu-guest-agent",
+      "sudo systemctl enable fstrim.timer",
     ]
   }
 
-  # 2. SSH hardening
+  # 2. Configurazione sistema: timezone, locale, datasource cloud-init.
+  #    Il datasource list evita timeout al boot cercando AWS/GCE/Azure
+  #    su una rete domestica — Proxmox usa solo NoCloud e ConfigDrive.
   provisioner "shell" {
     inline = [
-      "sudo sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config",
-      "sudo sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config",
-      "sudo sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config",
+      "sudo timedatectl set-timezone Europe/Rome",
+      "sudo sed -i 's/^# it_IT.UTF-8 UTF-8/it_IT.UTF-8 UTF-8/' /etc/locale.gen",
+      "sudo locale-gen",
+      "echo 'LANG=it_IT.UTF-8' | sudo tee /etc/default/locale",
+      "sudo mkdir -p /etc/cloud/cloud.cfg.d",
+      "echo 'datasource_list: [NoCloud, ConfigDrive, None]' | sudo tee /etc/cloud/cloud.cfg.d/99-proxmox.cfg",
     ]
   }
 
-  # 3. Cleanup template: ogni VM clonata deve avere machine-id univoco.
-  #    truncate a zero + symlink è il metodo corretto su Debian (man machine-id).
+  # 3. SSH hardening via drop-in file.
+  #    Scrivere in sshd_config.d/ è più robusto del sed su sshd_config:
+  #    le direttive qui hanno precedenza e non dipendono da regex su righe commentate.
+  provisioner "shell" {
+    inline = [
+      "sudo mkdir -p /etc/ssh/sshd_config.d",
+      "printf 'PasswordAuthentication no\nPermitRootLogin no\nPubkeyAuthentication yes\nX11Forwarding no\nAllowTcpForwarding no\nMaxAuthTries 3\nLoginGraceTime 30\n' | sudo tee /etc/ssh/sshd_config.d/99-hardening.conf",
+    ]
+  }
+
+  # 4. Utente 'ansible' dedicato con sudo NOPASSWD.
+  #    Nessuna SSH key qui: cloud-init la inietta al primo boot dalla
+  #    configurazione Terraform (initialization.user_account).
+  provisioner "shell" {
+    inline = [
+      "sudo useradd -m -s /bin/bash ansible",
+      "sudo usermod -aG sudo ansible",
+      "echo 'ansible ALL=(ALL) NOPASSWD:ALL' | sudo tee /etc/sudoers.d/ansible",
+      "sudo chmod 0440 /etc/sudoers.d/ansible",
+      "sudo mkdir -p /home/ansible/.ssh",
+      "sudo chmod 700 /home/ansible/.ssh",
+      "sudo chown -R ansible:ansible /home/ansible/.ssh",
+    ]
+  }
+
+  # 5. Cleanup template: cloud-init clean resetta lo stato per il primo boot
+  #    della VM clonata; machine-id a zero garantisce ID univoci per ogni clone.
   provisioner "shell" {
     inline = [
       "sudo apt-get clean",
