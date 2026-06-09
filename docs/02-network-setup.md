@@ -100,3 +100,79 @@ vanguard.internal   → 192.168.178.5
 - [ ] VM e LXC hanno connettività internet
 - [ ] Risoluzione DNS funzionante da tutti i nodi (`dig iss.internal @192.168.178.4`)
 - [ ] Dispositivi sulla rete riescono ad accedere alle risorse dell'homelab
+
+---
+
+## Sicurezza di rete — Piano A (Proxmox Firewall, senza switch managed)
+
+Senza uno switch managed non è possibile fare isolamento VLAN a livello hardware
+verso la LAN fisica. Il firewall integrato di Proxmox permette comunque di
+applicare regole per-VM/LXC a livello di hypervisor.
+
+> Il Piano B (VLAN completo con switch managed) è pianificato come sprint finale
+> del roadmap — vedi `roadmap.md`.
+
+### Abilitazione
+
+```
+Proxmox UI → Datacenter → Firewall → Options → Firewall: Yes
+Proxmox UI → Datacenter → Firewall → Options → Forward: No (non è un router)
+```
+
+Poi abilitare il firewall su ogni nodo:
+```
+Proxmox UI → houston → Firewall → Options → Firewall: Yes
+```
+
+### Regole per nodo
+
+**sentinel (Pi-hole — 192.168.178.4)**
+
+| Direzione | Proto | Porta | Sorgente | Azione | Motivo |
+|---|---|---|---|---|---|
+| IN | TCP+UDP | 53 | `192.168.178.0/24` | ACCEPT | DNS dalla LAN |
+| IN | TCP | 443 | workstation | ACCEPT | Web UI Pi-hole |
+| IN | TCP | 22 | workstation | ACCEPT | SSH admin |
+| IN | any | any | any | DROP | blocca tutto il resto |
+| OUT | TCP+UDP | 53 | `1.1.1.1`, `8.8.8.8` | ACCEPT | upstream DNS |
+| OUT | TCP | 80,443 | any | ACCEPT | aggiornamenti OS + gravity |
+| OUT | any | any | any | DROP | blocca tutto il resto |
+
+**vanguard (step-ca — 192.168.178.5)**
+
+| Direzione | Proto | Porta | Sorgente | Azione | Motivo |
+|---|---|---|---|---|---|
+| IN | TCP | 9000 | `192.168.178.3` (iss) | ACCEPT | ACME dal cluster |
+| IN | TCP | 9000 | workstation | ACCEPT | ACME + admin |
+| IN | TCP | 22 | workstation | ACCEPT | SSH admin |
+| IN | any | any | any | DROP | blocca tutto il resto |
+| OUT | TCP | 80,443 | any | ACCEPT | aggiornamenti OS |
+| OUT | any | any | any | DROP | blocca tutto il resto |
+
+**iss (k3s — 192.168.178.3)**
+
+| Direzione | Proto | Porta | Sorgente | Azione | Motivo |
+|---|---|---|---|---|---|
+| IN | TCP | 6443 | workstation | ACCEPT | kubectl API server |
+| IN | TCP | 80,443 | `192.168.178.0/24` | ACCEPT | Ingress Traefik |
+| IN | TCP | 22 | workstation | ACCEPT | SSH admin |
+| IN | any | any | any | DROP | blocca tutto il resto |
+| OUT | any | any | any | ACCEPT | il cluster deve raggiungere internet (immagini, ACME, ecc.) |
+
+> Le regole OUT di `iss` si restringeranno ulteriormente in S16 (download stack):
+> il traffico torrent di qBittorrent dovrà uscire **solo** via VPN egress.
+
+### Kubernetes NetworkPolicy (intra-cluster)
+
+Il CNI di default di k3s (Flannel) **non** implementa NetworkPolicy. Per
+applicare policy di rete tra i pod del cluster occorre sostituirlo con **Cilium**,
+che supporta anche L7 policy e ha observability integrata (Hubble).
+
+La migrazione Flannel → Cilium è pianificata contestualmente a S2 (bootstrap k3s).
+
+### Verifica Piano A
+
+- [ ] Firewall abilitato a livello Datacenter e nodo houston
+- [ ] `nmap -p 53 192.168.178.4` risponde solo da LAN, non da internet
+- [ ] `curl https://vanguard.internal:9000/acme/acme/directory` funziona da ISS, non da altri host non autorizzati
+- [ ] API server k3s (6443) raggiungibile solo dalla workstation

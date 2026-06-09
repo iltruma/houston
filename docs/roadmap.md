@@ -82,8 +82,9 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | S12    | Cloudflare Tunnel     | accesso remoto inbound senza aprire porte |
 
 ℹ️ **Persistenza**: i servizi con stato (Prometheus, Grafana, Loki, ArgoCD) usano il
-provisioner `local-path` di k3s (SSD locale), sufficiente su single-node. Longhorn/NFS
-(Fase 4) serve per i volumi grandi della media library, **non** è prerequisito qui.
+provisioner `local-path` di k3s puntato sull'NVMe (`/mnt/k3s-data`). Il SATA SSD
+ospita invece media e download (Fase 4). Vedi [05-storage.md](05-storage.md) per il
+layout completo dei due dischi.
 
 ⚠️ **Cloudflare Tunnel** richiede un **dominio pubblico su Cloudflare** (non `.internal`).
 Espone verso l'esterno solo i servizi scelti; gira come `cloudflared` nel cluster.
@@ -111,11 +112,48 @@ Obiettivo: usare tutto il backbone (GitOps + TLS + ingress) per pubblicare codic
 | S16    | Download stack          | qBittorrent (⚠️ dietro VPN egress) + Prowlarr + Sonarr + Radarr + Bazarr |
 | S17    | Jellyseerr              | UI di richiesta film/serie |
 
-⚠️ **Reality check hardware**: 500GB SSD totali sull'Optiplex non bastano per una
-libreria media (TB). Lo **storage** (S14) va risolto prima — disco aggiuntivo o NAS via NFS.
+⚠️ **Reality check hardware**: il SATA SSD da 500GB ospita la media library (~300GB
+disponibili dopo OS e VM). Per una collezione estesa servirà un HDD esterno o NAS
+(vedi [05-storage.md](05-storage.md)).
 
 ⚠️ **VPN torrent**: il traffico di qBittorrent va instradato su una VPN egress
 (es. Mullvad). È cosa diversa dal Cloudflare Tunnel (che è solo accesso inbound).
+
+---
+
+## Fase 5 — Rete avanzata (Piano B VLAN)
+
+> **Prerequisito hardware**: switch managed (es. TP-Link TL-SG108E ~30€,
+> Netgear GS308E ~40€, o MikroTik). Senza switch managed il firewall Proxmox
+> (Piano A, già documentato in [02-network-setup.md](02-network-setup.md))
+> è il livello di isolamento disponibile.
+
+| Sprint | Servizio | Note |
+|---|---|---|
+| S18 | VLAN segmentation | Bridge `vmbr0` VLAN-aware; riassegnazione IP per VLAN; firewall inter-VLAN su Proxmox |
+
+**Schema VLAN target:**
+
+| VLAN | Subnet | Ospita |
+|---|---|---|
+| VLAN 1 (native) | 192.168.178.x | Management: workstation, Proxmox host |
+| VLAN 10 | 10.10.0.x | Core infra: sentinel (Pi-hole), vanguard (step-ca) |
+| VLAN 20 | 10.20.0.x | Cluster: iss (k3s) |
+| VLAN 30 | 10.30.0.x | Downloads: qBittorrent + VPN egress (traffico untrusted) |
+| VLAN 40 | 10.40.0.x | DMZ: Cloudflare Tunnel exit point (servizi pubblici) |
+
+**Cosa cambia rispetto al Piano A:**
+
+- Il bridge Proxmox diventa VLAN-aware: ogni VM/LXC riceve un tag VLAN nella
+  propria configurazione di rete anziché stare tutte sulla stessa L2.
+- Il router (o Proxmox come router inter-VLAN) applica policy di routing tra VLAN.
+- VLAN 30 (download) non può raggiungere VLAN 10/20 — isolamento hardware
+  garantito dallo switch, non solo da firewall software.
+- Gli IP cambiano: le VM vanno riconfigurate e i record DNS `.internal`
+  aggiornati nel playbook Pi-hole.
+
+**DoD S18**: `iss`, `sentinel`, `vanguard` su VLAN distinte; ping cross-VLAN
+bloccato dove atteso; DNS `.internal` risolve correttamente dai nuovi IP.
 
 ---
 
