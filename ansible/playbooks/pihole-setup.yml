@@ -133,6 +133,10 @@
         pihole_dns_result.status == 400 and
         pihole_dns_result.json.error.hint != 'Uniqueness of items is enforced'
 
+    # Host monitoring: espone le metriche di sentinel su :9100 (vedi tasks/node-exporter.yml)
+    - name: Install node_exporter
+      ansible.builtin.import_tasks: ../tasks/node-exporter.yml
+
   handlers:
     - name: Update gravity
       ansible.builtin.uri:

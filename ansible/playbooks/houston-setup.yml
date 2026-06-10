@@ -1,0 +1,13 @@
+- name: Configure houston (Proxmox host)
+  hosts: houston
+  become: true
+
+  # Per ora houston e' provisionato a mano (vedi docs/01-proxmox-install.md,
+  # docs/02-network-setup.md). Questo playbook automatizza solo cio' che ha senso
+  # gestire via Ansible: al momento il monitoring host. Crescera' se automatizzeremo
+  # altro del Proxmox host.
+
+  tasks:
+    # Host monitoring: espone le metriche di houston su :9100 (vedi tasks/node-exporter.yml)
+    - name: Install node_exporter
+      ansible.builtin.import_tasks: ../tasks/node-exporter.yml

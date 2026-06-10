@@ -179,6 +179,10 @@
         dest: "certs/houston-homelab-root-ca.crt"
         flat: true
 
+    # Host monitoring: espone le metriche di vanguard su :9100 (vedi tasks/node-exporter.yml)
+    - name: Install node_exporter
+      ansible.builtin.import_tasks: ../tasks/node-exporter.yml
+
   handlers:
     - name: Restart step-ca
       ansible.builtin.systemd_service:

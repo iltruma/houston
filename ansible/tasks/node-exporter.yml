@@ -1,0 +1,33 @@
+# Task condivisi: installano node_exporter su un host.
+# Importati dai playbook dei singoli host (pihole-setup, stepca-setup, houston-setup)
+# con: ansible.builtin.import_tasks. Ereditano 'become: true' dal play chiamante.
+#
+# node_exporter espone le metriche dell'host (CPU, RAM, disco, rete) su :9100 in
+# formato Prometheus. Il pacchetto Debian crea e avvia da solo il servizio systemd
+# 'prometheus-node-exporter'. Le metriche le raccogliera' Prometheus (S7).
+#
+# da verificare: su houston (Proxmox) 'update_cache' fa 'apt update'. Se il repo
+# 'pve-enterprise' e' attivo senza subscription, apt fallisce con 401. In tal caso
+# disabilita l'enterprise e abilita 'pve-no-subscription' prima di rilanciare.
+
+- name: Install prometheus-node-exporter
+  ansible.builtin.apt:
+    name: prometheus-node-exporter
+    update_cache: true
+    state: present
+
+- name: Ensure node_exporter is enabled and running
+  ansible.builtin.systemd:
+    name: prometheus-node-exporter
+    enabled: true
+    state: started
+
+- name: Verify the node_exporter metrics endpoint responds
+  ansible.builtin.uri:
+    url: http://127.0.0.1:9100/metrics
+    method: GET
+    status_code: 200
+  register: ne_check
+  retries: 5
+  delay: 2
+  until: ne_check.status == 200

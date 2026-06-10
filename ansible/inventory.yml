@@ -1,5 +1,10 @@
 all:
   hosts:
+
+    houston:
+      ansible_host: 192.168.178.2
+      ansible_user: root
+      ansible_ssh_private_key_file: ~/.ssh/id_ed25519
     iss:
       ansible_host: 192.168.178.3
       ansible_user: ansible
