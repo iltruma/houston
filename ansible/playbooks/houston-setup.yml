@@ -11,3 +11,4 @@
     # Host monitoring: espone le metriche di houston su :9100 (vedi tasks/node-exporter.yml)
     - name: Install node_exporter
       ansible.builtin.import_tasks: ../tasks/node-exporter.yml
+      tags: node_exporter
