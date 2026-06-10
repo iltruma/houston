@@ -3,8 +3,8 @@
 # Crea il template Proxmox grezzo (ID 9000) dal cloud image Debian 13.
 # Packer clona questo template e produce il template finale (ID 9001).
 #
-# Uso: ./upload-cloud-image.sh [vm_id] [storage] [ssh_public_key]
-# Es:  ./upload-cloud-image.sh 9000 local-lvm ~/.ssh/id_ed25519.pub
+# Uso: ./upload-cloud-image.sh [vm_id] [storage] [ssh_public_key] [disk_size]
+# Es:  ./upload-cloud-image.sh 9000 local-lvm ~/.ssh/id_ed25519.pub 20G
 
 set -euo pipefail
 
@@ -12,6 +12,7 @@ VM_ID="${1:-9000}"
 VM_NAME="debian13-cloud-raw"
 STORAGE="${2:-local-lvm}"
 SSH_KEY_FILE="${3:-$HOME/.ssh/id_ed25519.pub}"
+DISK_SIZE="${4:-20G}"
 
 IMAGE_URL="https://cloud.debian.org/images/cloud/trixie/latest/debian-13-genericcloud-amd64.qcow2"
 IMAGE_FILE="/tmp/debian-13-genericcloud-amd64.qcow2"
@@ -62,6 +63,9 @@ qm set "$VM_ID" \
   --ipconfig0 ip=dhcp \
   --ciuser debian \
   --sshkeys "$SSH_KEY_FILE"
+
+echo "==> Resize disco a ${DISK_SIZE}..."
+qm resize "$VM_ID" virtio0 "$DISK_SIZE"
 
 echo "==> Conversione in template..."
 qm template "$VM_ID"

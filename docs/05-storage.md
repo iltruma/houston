@@ -1,102 +1,81 @@
 # Storage Layout
 
-## Dischi disponibili
+## Hardware attuale
 
 | Disco | Tipo | Dimensione | Ruolo |
 |---|---|---|---|
-| `/dev/sda` | SATA SSD | 500GB | Proxmox OS + dati pesanti (media, download, backup) |
-| `/dev/nvme0n1` | NVMe SSD | 512GB | Servizi: dischi VM/LXC + PersistentVolumes k3s |
+| `/dev/sda` | SATA SSD | 500GB | Tutto: OS Proxmox + VM/LXC + dati |
 
-## Principio di design
-
-**NVMe → velocità → servizi**: i workload stateful del cluster (Prometheus TSDB,
-Loki chunks, ArgoCD, etcd k3s) fanno I/O casuale intenso — l'NVMe li accelera
-significativamente rispetto al SATA.
-
-**SATA → capienza → dati**: Jellyfin e qBittorrent fanno I/O prevalentemente
-sequenziale (streaming, download). Un SATA SSD è più che sufficiente e conserva
-l'NVMe per chi ne ha davvero bisogno.
+> ⚠️ **NVMe non ancora installato.** Il piano originale prevedeva un secondo disco
+> NVMe per separare servizi (I/O casuale) da dati pesanti (media/download).
+> Per ora tutto gira su SATA. Dopo l'installazione dell'NVMe si ricostruirà
+> l'infrastruttura da zero con il layout definitivo.
 
 ---
 
-## NVMe — pool `nvme` (ZFS)
+## Layout attuale (solo SATA)
 
-ZFS è scelto per: checksums di integrità dati, compressione trasparente (utile
-su Prometheus/Loki che comprimono male da soli), snapshot nativi usabili con vzdump.
-Con 16GB RAM il memory overhead di ZFS è trascurabile.
+```
+/dev/sda  500GB SATA SSD
+  └── local (~94GB, dir)       OS Proxmox, ISO, template LXC
+  └── local-lvm (~348GB, LVM thin)
+        ├── template 9000      cloud image grezzo Debian 13
+        ├── template 9001      debian13-base (output Packer)
+        ├── iss (VM k3s)       20GB — root disk
+        ├── sentinel (LXC)     root disk Pi-hole
+        └── vanguard (LXC)     root disk step-ca
+```
+
+348GB su `local-lvm` è sufficiente per tutto il backbone (S3–S6) e la Fase 2
+(osservabilità). I problemi di spazio si pongono solo in Fase 4 con media/download.
+
+---
+
+## Layout target post-NVMe
+
+Da fare quando l'NVMe sarà installato — rebuild completo dell'infrastruttura.
+
+### NVMe → pool `nvme` (ZFS)
 
 ```
 /dev/nvme0n1
   └── zpool: nvme
-        ├── nvme/vm-disks    (~200GB)  root disk di VM e LXC
-        └── nvme/k3s-pv      (~250GB)  disco PersistentVolumes k3s
-            (spare ~62GB per headroom ZFS — vuole ~10-15% libero)
+        ├── nvme/vm-disks    (~200GB)  root disk VM e LXC
+        └── nvme/k3s-pv      (~250GB)  PersistentVolumes k3s
 ```
 
-### Dettaglio `nvme/vm-disks`
-
-Registrato in Proxmox come storage di tipo **ZFS** → contiene i root disk di
-`iss`, `sentinel`, `vanguard`. I VM/LXC esistenti vanno migrati da `local-lvm`
-(SATA) a questo pool; quelli nuovi creati qui direttamente.
-
-### Dettaglio `nvme/k3s-pv`
-
-Viene esposto come **zvol** (dispositivo a blocchi ZFS) e attachato alla VM `iss`
-come secondo disco virtuale `/dev/vdb`. Dentro ISS:
-
-```
-/dev/vdb
-  └── formato: ext4
-  └── mount: /mnt/k3s-data
-        └── k3s local-path provisioner usa /mnt/k3s-data
-              ├── PV Prometheus (TSDB)
-              ├── PV Grafana (stato)
-              ├── PV Loki (chunks + index)
-              └── PV ArgoCD (repo cache)
-```
-
-La configurazione del provisioner avviene in S2 aggiungendo l'argomento
-`--default-local-storage-path=/mnt/k3s-data` al manifest k3s.
-
----
-
-## SATA — riuso dopo migrazione VM
-
-Il SATA ha già Proxmox OS nel VG `pve`. Dopo aver migrato i root disk delle VM
-su NVMe, il thin pool `data` (LVM) libera spazio nel VG. Da quello spazio si
-ricavano due nuovi Logical Volume:
+### SATA → dati pesanti
 
 ```
 /dev/sda
   └── VG: pve
-        ├── pve-root     (~50GB)   Proxmox OS — fisso
-        ├── local        (~30GB)   ISO e template LXC
-        ├── [data]       (svuotato dopo migrazione VM su NVMe)
-        ├── sata-media   (~300GB)  disco dati per ISS (media + download)
-        └── sata-backup  (~100GB)  target vzdump
+        ├── pve-root     (~50GB)    Proxmox OS
+        ├── local        (~30GB)    ISO e template LXC
+        ├── sata-media   (~300GB)   disco dati ISS (Jellyfin + download)
+        └── sata-backup  (~100GB)   target vzdump
 ```
 
-### Dettaglio `sata-media`
+### PersistentVolumes k3s su NVMe
 
-Attachato a ISS come terzo disco virtuale `/dev/vdc`:
+`nvme/k3s-pv` esposto come zvol e attachato a ISS come `/dev/vdb`:
 
 ```
-/dev/vdc
-  └── formato: ext4
-  └── mount: /mnt/media
-        ├── /mnt/media/jellyfin    ← libreria Jellyfin
-        └── /mnt/media/downloads  ← cartella qBittorrent (torrent in uscita)
+/dev/vdb → /mnt/k3s-data
+  ├── PV Prometheus
+  ├── PV Grafana
+  ├── PV Loki
+  └── PV ArgoCD
 ```
 
-> ⚠️ **Realtà hardware**: ~300GB bastano per una libreria piccola/media. Per
-> una collezione 4K o HD estesa servirà uno storage aggiuntivo (HDD esterno USB
-> o NAS via NFS). Questo è il prerequisito S14 della Fase 4 — non è da risolvere
-> ora.
+### Media su SATA
 
-### Dettaglio `sata-backup`
+`sata-media` attachato a ISS come `/dev/vdc`:
 
-Registrato in Proxmox come storage di tipo **Directory** con contenuto `VZDump`.
-Usato dal task di backup programmato configurato in S6.
+```
+/dev/vdc → /mnt/media
+  ├── /mnt/media/jellyfin
+  └── /mnt/media/downloads
+```
 
 ---
 
@@ -104,6 +83,5 @@ Usato dal task di backup programmato configurato in S6.
 
 | Sprint | Operazione storage |
 |---|---|
-| S2 — k3s completamento | Aggiungere NVMe come pool ZFS; creare zvol `k3s-pv`; attacharlo a ISS come `/dev/vdb`; montare e configurare local-path provisioner |
-| S6 — Backup/DR | Creare LV `sata-backup`; registrare in Proxmox; configurare vzdump schedulato |
-| S14 — Storage Fase 4 | Creare LV `sata-media`; attachare a ISS come `/dev/vdc`; configurare path in Jellyfin e qBittorrent |
+| S6 — Backup/DR | vzdump su `local` (per ora); post-NVMe su `sata-backup` |
+| S14 — Storage Fase 4 | Prerequisito: NVMe installato; creare pool ZFS e LV SATA |

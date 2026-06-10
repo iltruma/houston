@@ -23,12 +23,6 @@ resource "proxmox_virtual_environment_vm" "k3s" {
     dedicated = 8192
   }
 
-  disk {
-    datastore_id = "local-lvm"
-    size         = 200
-    interface    = "scsi0"
-  }
-
   network_device {
     bridge = "vmbr0"
   }
