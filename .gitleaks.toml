@@ -1,0 +1,17 @@
+# Gitleaks config — extends the default ruleset.
+#
+# The only exception: the default "kubernetes-secret-yaml" rule fires on ANY
+# committed `kind: Secret`. secret-root-ca.yaml contains exclusively the
+# PUBLIC root CA certificate of the homelab (a trust anchor, published on
+# purpose — same content as the ClusterIssuer caBundle). Nothing confidential.
+# Real secrets stay out of Git (SealedSecrets / ansible-vault / tfvars).
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Public root CA cert committed on purpose (trust anchor, not a secret)"
+paths = [
+  '''k8s/apps/cert-manager/secret-root-ca\.yaml''',
+  '''k8s/cert-manager/secret-root-ca\.yaml''', # historical path (pre-ApplicationSet layout)
+]

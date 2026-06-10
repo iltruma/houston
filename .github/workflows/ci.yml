@@ -1,0 +1,85 @@
+# CI — lint, validate e secret scanning su ogni push/PR.
+#
+# Nessun job tocca l'infrastruttura reale: sono tutti controlli statici.
+# - terraform: fmt + validate (offline, -backend=false)
+# - ansible-lint: profilo "production" sui playbook
+# - kubeconform: schema-validation dei manifest k8s (CRD via catalogo datree)
+# - gitleaks: secret scanning sull'intera history (config in .gitleaks.toml)
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  terraform:
+    name: terraform fmt + validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.15.5"
+      - name: terraform fmt
+        run: terraform fmt -check -diff -recursive
+      - name: terraform init (no backend)
+        run: terraform init -backend=false -input=false
+      - name: terraform validate
+        run: terraform validate
+
+  ansible-lint:
+    name: ansible-lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ansible
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install ansible-lint
+        run: pip install "ansible-lint==26.*"
+      - name: Lint playbooks
+        run: ansible-lint playbooks/
+
+  kubeconform:
+    name: kubeconform (k8s manifests)
+    runs-on: ubuntu-latest
+    env:
+      KUBECONFORM_VERSION: v0.8.0
+    steps:
+      - uses: actions/checkout@v4
+      # -skip CustomResourceDefinition: il meta-schema delle CRD non è nei
+      #   cataloghi pubblici; le CR (Certificate, ClusterIssuer, …) sono
+      #   comunque validate tramite il catalogo datree.
+      # -ignore values.yaml: è input Helm, non un manifest Kubernetes.
+      - name: Validate manifests
+        run: |
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" | tar xz kubeconform
+          ./kubeconform -strict -summary \
+            -skip CustomResourceDefinition \
+            -ignore-filename-pattern '.*values\.yaml' \
+            -ignore-filename-pattern '.*README\.md' \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            k8s/
+
+  gitleaks:
+    name: gitleaks (secret scanning)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # history completa: scansiona ogni commit, non solo il tip
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
