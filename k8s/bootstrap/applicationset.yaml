@@ -9,7 +9,7 @@ spec:
   generators:
     - git:
         repoURL: https://github.com/iltruma/houston.git
-        revision: HEAD
+        revision: main
         directories:
           - path: k8s/apps/*
   template:
@@ -21,7 +21,7 @@ spec:
       project: default
       source:
         repoURL: https://github.com/iltruma/houston.git
-        targetRevision: HEAD
+        targetRevision: main
         path: '{{.path.path}}'
       destination:
         server: https://kubernetes.default.svc
