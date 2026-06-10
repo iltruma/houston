@@ -4,16 +4,21 @@
 
   tasks:
     - name: Set hostname
-      hostname:
+      ansible.builtin.hostname:
         name: iss
 
+    # set -o pipefail: senza, se curl fallisce la pipe "riesce" comunque
+    # e sh esegue uno script vuoto — l'errore passerebbe inosservato.
     - name: Install k3s
-      shell: curl -sfL https://get.k3s.io | sh -
+      ansible.builtin.shell: |
+        set -o pipefail
+        curl -sfL https://get.k3s.io | sh -
       args:
+        executable: /bin/bash
         creates: /usr/local/bin/k3s
 
     - name: Wait for k3s node to be Ready
-      command: k3s kubectl get nodes
+      ansible.builtin.command: k3s kubectl get nodes
       register: nodes_output
       until: "'Ready' in nodes_output.stdout"
       retries: 20
@@ -21,10 +26,10 @@
       changed_when: false
 
     - name: Fetch kubeconfig to workstation
-      fetch:
+      ansible.builtin.fetch:
         src: /etc/rancher/k3s/k3s.yaml
         dest: "{{ lookup('env', 'HOME') }}/.kube/config-k3s"
-        flat: yes
+        flat: true
 
 - name: Configure kubeconfig on workstation
   hosts: localhost
@@ -33,18 +38,18 @@
 
   tasks:
     - name: Ensure ~/.kube directory exists
-      file:
+      ansible.builtin.file:
         path: "{{ lookup('env', 'HOME') }}/.kube"
         state: directory
         mode: '0700'
 
     - name: Fix kubeconfig server address
-      replace:
+      ansible.builtin.replace:
         path: "{{ lookup('env', 'HOME') }}/.kube/config-k3s"
         regexp: 'https://127\.0\.0\.1:6443'
         replace: 'https://192.168.178.3:6443'
 
     - name: Set kubeconfig permissions
-      file:
+      ansible.builtin.file:
         path: "{{ lookup('env', 'HOME') }}/.kube/config-k3s"
         mode: '0600'
