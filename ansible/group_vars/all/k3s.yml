@@ -1,0 +1,6 @@
+# Variables for the k3s cluster (host: iss)
+#
+# Version is pinned so a re-provision rebuilds the SAME cluster instead of
+# whatever happens to be the latest stable that day. Bump it deliberately:
+# https://github.com/k3s-io/k3s/releases
+k3s_version: "v1.35.5+k3s1"

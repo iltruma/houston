@@ -16,6 +16,8 @@
       args:
         executable: /bin/bash
         creates: /usr/local/bin/k3s
+      environment:
+        INSTALL_K3S_VERSION: "{{ k3s_version }}"
 
     - name: Wait for k3s node to be Ready
       ansible.builtin.command: k3s kubectl get nodes
