@@ -124,11 +124,14 @@
         method: PUT
         headers:
           X-FTL-SID: "{{ pihole_auth.json.session.sid }}"
-        status_code: [200, 201]
+        status_code: [200, 201, 400]
         validate_certs: false
       loop: "{{ pihole_dns_records }}"
       register: pihole_dns_result
       changed_when: pihole_dns_result.status == 201
+      failed_when: >
+        pihole_dns_result.status == 400 and
+        pihole_dns_result.json.error.hint != 'Uniqueness of items is enforced'
 
   handlers:
     - name: Update gravity
