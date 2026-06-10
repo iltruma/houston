@@ -1,6 +1,6 @@
 global:
   domain: argocd.internal
 
-server:
-  extraArgs:
-    - --insecure
+configs:
+  params:
+    server.insecure: true
