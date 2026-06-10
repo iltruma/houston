@@ -12,6 +12,14 @@
       args:
         creates: /usr/local/bin/k3s
 
+    - name: Wait for k3s node to be Ready
+      command: k3s kubectl get nodes
+      register: nodes_output
+      until: "'Ready' in nodes_output.stdout"
+      retries: 20
+      delay: 15
+      changed_when: false
+
     - name: Fetch kubeconfig to workstation
       fetch:
         src: /etc/rancher/k3s/k3s.yaml
@@ -40,11 +48,3 @@
       file:
         path: "{{ lookup('env', 'HOME') }}/.kube/config-k3s"
         mode: '0600'
-
-    - name: Wait for k3s node to be Ready
-      command: kubectl get nodes --kubeconfig {{ lookup('env', 'HOME') }}/.kube/config-k3s
-      register: nodes_output
-      until: "'Ready' in nodes_output.stdout"
-      retries: 10
-      delay: 15
-      changed_when: false
