@@ -31,7 +31,7 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | ST     | VM template    | houston        | 🟢    | —          |
 | S2     | k3s            | VM `iss`       | 🟢    | ST         |
 | S3     | cert-manager   | k3s            | 🟢    | S1, S2     |
-| S4     | ArgoCD         | k3s            | 🔴    | S2         |
+| S4     | ArgoCD         | k3s            | 🟢    | S2         |
 | S5     | Secrets mgmt   | k3s            | 🔴    | S4         |
 | S6     | Backup / DR    | houston + k3s  | 🔴    | S1, S2     |
 
