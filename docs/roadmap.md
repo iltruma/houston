@@ -177,4 +177,5 @@ terraform/   VM e LXC (Proxmox)        — vm-k3s, lxc-pihole, lxc-stepca
 ansible/     provisioning              — pihole, k3s, step-ca
 k8s/         manifesti GitOps          — bootstrap/ (ApplicationSet) + apps/<servizio>/
 docs/        guide passo-passo         — install, network, pihole, stepca, roadmap
+.github/     CI                        — lint/validate (terraform, ansible, k8s) + secret scanning
 ```

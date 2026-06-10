@@ -15,7 +15,9 @@ k8s/
 └── apps/                       ← una cartella per servizio, con dentro TUTTI i suoi manifest
     ├── argocd/                 ingress + certificate della UI di ArgoCD
     ├── cert-manager/           ClusterIssuer (step-ca ACME) + root CA + cert di test
-    └── coredns/                ConfigMap custom: stub zone .internal → Pi-hole
+    ├── coredns/                ConfigMap custom: stub zone .internal → Pi-hole
+    ├── homepage/               dashboard dichiarativa dei servizi
+    └── sealed-secrets/         controller Sealed Secrets (secret cifrati in Git)
 ```
 
 Due livelli, con ruoli distinti:
