@@ -59,8 +59,13 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 - DoD: un `Certificate` di test viene emesso e risulta `Ready`, firmato dalla Houston Homelab CA.
 
 **S4 — ArgoCD: GitOps**
-- Install ArgoCD + pattern *app-of-apps* (una root `Application` che punta a `k8s/`).
-- DoD: ArgoCD UI raggiungibile via Ingress TLS; la root app sincronizza dal repo.
+- Install ArgoCD (Helm) + un `ApplicationSet` (*git directory generator*) che genera
+  un'`Application` per ogni cartella sotto `k8s/apps/*`: una cartella per servizio,
+  con dentro tutti i suoi manifest (ingress, certificate, configmap…). I file di
+  bootstrap (values Helm, `ApplicationSet`) stanno in `k8s/bootstrap/`, applicati a
+  mano una volta sola.
+- DoD: ArgoCD UI raggiungibile via Ingress TLS; l'`ApplicationSet` genera e
+  sincronizza le app dal repo.
 
 **S5 — Secrets management: Sealed Secrets**
 - Controller Sealed Secrets installato via ArgoCD; i `SealedSecret` cifrati si
@@ -170,6 +175,6 @@ bloccato dove atteso; DNS `.internal` risolve correttamente dai nuovi IP.
 packer/      VM template (Debian 13)   — upload script + config Packer (sprint ST)
 terraform/   VM e LXC (Proxmox)        — vm-k3s, lxc-pihole, lxc-stepca
 ansible/     provisioning              — pihole, k3s, step-ca
-k8s/         manifesti + ArgoCD        — (da creare in S3+)
+k8s/         manifesti GitOps          — bootstrap/ (ApplicationSet) + apps/<servizio>/
 docs/        guide passo-passo         — install, network, pihole, stepca, roadmap
 ```
