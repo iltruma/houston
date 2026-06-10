@@ -87,7 +87,7 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | Sprint | Servizio              | Stato | Note |
 |--------|-----------------------|-------|------|
 | S7     | Prometheus + Grafana  | 🔴    | `kube-prometheus-stack` via ArgoCD |
-| S8     | Host monitoring       | 🔴    | `node_exporter` su `houston`/`sentinel`/`vanguard` → scrape da Prometheus (Proxmox + LXC, non solo il cluster) |
+| S8     | Host monitoring       | 🟢    | `node_exporter` su `houston`/`sentinel`/`vanguard` → scrape da Prometheus (Proxmox + LXC, non solo il cluster) |
 | S9     | Loki                  | 🔴    | log aggregation, datasource in Grafana |
 | S10    | Uptime Kuma           | 🔴    | status page / uptime |
 | S11    | Homepage              | 🟢    | dashboard dichiarativa (YAML in Git) dei servizi |
