@@ -16,8 +16,9 @@ source "proxmox-clone" "debian13" {
   node                     = var.proxmox_node
 
   # --- Clone: eredita cloud-init (DHCP + SSH key) dal template base ---
-  clone_vm_id = var.source_vm_id
-  full_clone  = true
+  clone_vm_id  = var.source_vm_id
+  full_clone   = true
+  qemu_agent   = true
 
   # --- VM temporanea di build ---
   vm_id   = var.target_vm_id

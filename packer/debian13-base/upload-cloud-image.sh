@@ -30,6 +30,16 @@ fi
 echo "==> Download Debian 13 genericcloud image..."
 wget -q --show-progress "$IMAGE_URL" -O "$IMAGE_FILE"
 
+echo "==> Installazione qemu-guest-agent nell'immagine (richiede libguestfs-tools)..."
+if ! command -v virt-customize &>/dev/null; then
+  echo "ERRORE: virt-customize non trovato. Installa con: apt install libguestfs-tools"
+  exit 1
+fi
+virt-customize -a "$IMAGE_FILE" \
+  --install qemu-guest-agent \
+  --run-command "systemctl enable qemu-guest-agent" \
+  --truncate /etc/machine-id
+
 echo "==> Creazione VM $VM_ID ($VM_NAME)..."
 qm create "$VM_ID" \
   --name "$VM_NAME" \
@@ -39,17 +49,16 @@ qm create "$VM_ID" \
   --serial0 socket \
   --vga serial0 \
   --ostype l26 \
-  --agent enabled=0
+  --agent enabled=1
 
 echo "==> Import disco..."
 qm importdisk "$VM_ID" "$IMAGE_FILE" "$STORAGE" --format raw
 
 echo "==> Configurazione VM..."
 qm set "$VM_ID" \
-  --scsihw virtio-scsi-pci \
-  --scsi0 "$STORAGE:vm-$VM_ID-disk-0,discard=on,ssd=1" \
+  --virtio0 "$STORAGE:vm-$VM_ID-disk-0,discard=on" \
   --ide2 "$STORAGE:cloudinit" \
-  --boot order=scsi0 \
+  --boot order=virtio0 \
   --ipconfig0 ip=dhcp \
   --ciuser debian \
   --sshkeys "$SSH_KEY_FILE"
