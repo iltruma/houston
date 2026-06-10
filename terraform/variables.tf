@@ -1,3 +1,9 @@
+variable "proxmox_endpoint" {
+  description = "URL dell'API Proxmox"
+  type        = string
+  default     = "https://192.168.178.2:8006"
+}
+
 variable "proxmox_api_token" {
   description = "API token per Proxmox (formato: user@realm!tokenname=secret)"
   type        = string
