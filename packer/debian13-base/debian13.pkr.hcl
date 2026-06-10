@@ -48,13 +48,20 @@ build {
   name    = "debian13-base"
   sources = ["source.proxmox-clone.debian13"]
 
+  # 0. Attendi che cloud-init finisca prima di usare apt.
+  #    Al primo boot cloud-init tiene dpkg occupato — senza questo wait
+  #    i provisioner successivi falliscono con "dpkg lock" error.
+  provisioner "shell" {
+    inline           = ["sudo cloud-init status --wait"]
+    valid_exit_codes = [0, 2]
+  }
+
   # 1. Pacchetti base comuni a tutti i playbook Ansible.
   #    --no-install-recommends mantiene il template minimale.
   provisioner "shell" {
     inline = [
       "sudo apt-get update -qq",
       "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends qemu-guest-agent python3 curl ca-certificates gnupg",
-      "sudo systemctl enable qemu-guest-agent",
       "sudo systemctl enable fstrim.timer",
     ]
   }

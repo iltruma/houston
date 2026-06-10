@@ -38,7 +38,6 @@ if ! command -v virt-customize &>/dev/null; then
 fi
 virt-customize -a "$IMAGE_FILE" \
   --install qemu-guest-agent \
-  --run-command "systemctl enable qemu-guest-agent" \
   --truncate /etc/machine-id
 
 echo "==> Creazione VM $VM_ID ($VM_NAME)..."
