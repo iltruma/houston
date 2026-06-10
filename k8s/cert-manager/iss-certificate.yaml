@@ -1,0 +1,12 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: iss-cert
+  namespace: default
+spec:
+  secretName: iss-cert-tls
+  issuerRef:
+    name: step-ca-acme
+    kind: ClusterIssuer
+  dnsNames:
+  - iss.internal
