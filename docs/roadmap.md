@@ -84,14 +84,14 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 
 ## Fase 2 — Accesso & osservabilità
 
-| Sprint | Servizio              | Note |
-|--------|-----------------------|------|
-| S7     | Prometheus + Grafana  | `kube-prometheus-stack` via ArgoCD |
-| S8     | Host monitoring       | `node_exporter` su `houston`/`sentinel`/`vanguard` → scrape da Prometheus (Proxmox + LXC, non solo il cluster) |
-| S9     | Loki                  | log aggregation, datasource in Grafana |
-| S10    | Uptime Kuma           | status page / uptime |
-| S11    | Homepage              | dashboard dichiarativa (YAML in Git) dei servizi |
-| S12    | Cloudflare Tunnel     | accesso remoto inbound senza aprire porte |
+| Sprint | Servizio              | Stato | Note |
+|--------|-----------------------|-------|------|
+| S7     | Prometheus + Grafana  | 🔴    | `kube-prometheus-stack` via ArgoCD |
+| S8     | Host monitoring       | 🔴    | `node_exporter` su `houston`/`sentinel`/`vanguard` → scrape da Prometheus (Proxmox + LXC, non solo il cluster) |
+| S9     | Loki                  | 🔴    | log aggregation, datasource in Grafana |
+| S10    | Uptime Kuma           | 🔴    | status page / uptime |
+| S11    | Homepage              | 🟢    | dashboard dichiarativa (YAML in Git) dei servizi |
+| S12    | Cloudflare Tunnel     | 🔴    | accesso remoto inbound senza aprire porte |
 
 ℹ️ **Persistenza**: i servizi con stato (Prometheus, Grafana, Loki, ArgoCD) usano il
 provisioner `local-path` di k3s puntato sull'NVMe (`/mnt/k3s-data`). Il SATA SSD
