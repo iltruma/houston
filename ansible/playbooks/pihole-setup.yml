@@ -114,39 +114,9 @@
       changed_when: pihole_adlists_result.status == 201
       notify: Update gravity
 
-    # Reconcile local DNS records: delete stale entries, then add desired ones.
-    # Pi-hole v6 stores hosts as ["IP hostname", ...] under config.dns.hosts.
-    - name: Fetch current local DNS records
-      ansible.builtin.uri:
-        url: "{{ pihole_base_url }}/api/config/dns/hosts"
-        method: GET
-        headers:
-          X-FTL-SID: "{{ pihole_auth.json.session.sid }}"
-        validate_certs: false
-      register: pihole_current_hosts
-
-    - name: Remove stale local DNS records
-      ansible.builtin.uri:
-        url: "{{ pihole_base_url }}/api/config/dns/hosts/{{ item | replace(' ', '%20') }}"
-        method: DELETE
-        headers:
-          X-FTL-SID: "{{ pihole_auth.json.session.sid }}"
-        status_code: [200, 204, 404]
-        validate_certs: false
-      loop: >-
-        {{
-          (pihole_current_hosts.json.config.dns.hosts | default([])) |
-          difference(
-            pihole_dns_records |
-            map(attribute='ip') |
-            zip(pihole_dns_records | map(attribute='hostname')) |
-            map('join', ' ') |
-            list
-          )
-        }}
-      changed_when: true
-
-    # PUT is idempotent: 200 = already exists, 201 = created.
+    # Pi-hole v6 local DNS records — stored in FTL config, not in custom.list.
+    # PUT /api/config/dns/hosts/{record} is idempotent: 200 = already exists, 201 = created.
+    # To remove records: delete from Pi-hole UI or recreate the LXC via Terraform.
     - name: Add local DNS records
       ansible.builtin.uri:
         url: "{{ pihole_base_url }}/api/config/dns/hosts/{{ item.ip | urlencode }}%20{{ item.hostname | urlencode }}"
