@@ -64,7 +64,10 @@ jobs:
       # -ignore values.yaml: è input Helm, non un manifest Kubernetes.
       - name: Validate manifests
         run: |
-          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" | tar xz kubeconform
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" -o kubeconform.tar.gz
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/checksums.txt" -o checksums.txt
+          grep "kubeconform-linux-amd64.tar.gz" checksums.txt | sha256sum --check
+          tar xz -f kubeconform.tar.gz kubeconform
           ./kubeconform -strict -summary \
             -skip CustomResourceDefinition \
             -ignore-filename-pattern '.*values\.yaml' \
