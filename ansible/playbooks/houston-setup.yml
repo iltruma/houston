@@ -170,6 +170,19 @@
         cmd: pvesm add dir sata-backup --path /mnt/sata-backup --content backup
       when: "'sata-backup' not in pvesm_status.stdout"
 
+    # ── LXC templates ────────────────────────────────────────────────────────
+    # Il template Debian 13 standard va scaricato una volta e usato da Terraform
+    # per creare i container (sentinel, vanguard). Si aggiorna via `pveam update`.
+
+    - name: Update pveam template database
+      ansible.builtin.command: pveam update
+      changed_when: false
+
+    - name: Download Debian 13 LXC standard template
+      ansible.builtin.command:
+        cmd: pveam download local debian-13-standard_13.1-2_amd64.tar.zst
+        creates: /var/lib/vz/template/cache/debian-13-standard_13.1-2_amd64.tar.zst
+
     # ── API users Proxmox (terraform@pve, packer@pve) ─────────────────────────
 
     - name: Create Proxmox API users for Terraform and Packer
