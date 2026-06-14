@@ -172,7 +172,7 @@
 
     # ── LXC templates ────────────────────────────────────────────────────────
     # Il template Debian 13 standard va scaricato una volta e usato da Terraform
-    # per creare i container (sentinel, vanguard). Si aggiorna via `pveam update`.
+    # per creare i container (sentinel). Si aggiorna via `pveam update`.
 
     - name: Update pveam template database
       ansible.builtin.command: pveam update

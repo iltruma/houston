@@ -12,5 +12,5 @@ terraform {
 provider "proxmox" {
   endpoint  = var.proxmox_endpoint
   api_token = var.proxmox_api_token
-  insecure  = true # Proxmox uses a self-signed cert; TODO: issue one from step-ca and drop this
+  insecure  = true # Proxmox uses a self-signed cert (internal host, no public name)
 }

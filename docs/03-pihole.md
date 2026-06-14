@@ -42,7 +42,6 @@ pihole_dns_records:                 # record DNS locali (.internal)
   - { ip: "192.168.178.2", hostname: "houston.internal" }
   - { ip: "192.168.178.3", hostname: "iss.internal" }
   - { ip: "192.168.178.4", hostname: "sentinel.internal" }
-  - { ip: "192.168.178.5", hostname: "vanguard.internal" }
 
 pihole_adlists:                     # blocklist caricate via API
   - "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"

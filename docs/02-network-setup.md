@@ -13,7 +13,6 @@ Internet
      ├── 192.168.178.2   houston   Proxmox VE (host)
      ├── 192.168.178.3   iss       VM   k3s single-node
      ├── 192.168.178.4   sentinel  LXC  Pi-hole (DNS)
-     ├── 192.168.178.5   vanguard  LXC  step-ca (CA di rete)
      │
      └── 192.168.178.x   Altri dispositivi (DHCP dal router)
 ```
@@ -50,7 +49,6 @@ per stabilità. I client generici prendono l'IP dal DHCP del router.
 | `houston`  | Hypervisor Proxmox VE      | host | 192.168.178.2 |
 | `iss`      | Cluster k3s (single-node)  | VM   | 192.168.178.3 |
 | `sentinel` | Pi-hole (DNS + adlists)    | LXC  | 192.168.178.4 |
-| `vanguard` | step-ca (CA di rete, ACME) | LXC  | 192.168.178.5 |
 
 ## DNS
 
@@ -85,14 +83,16 @@ I record DNS locali sono gestiti **dichiarativamente** dal playbook
 houston.internal    → 192.168.178.2
 iss.internal        → 192.168.178.3
 sentinel.internal   → 192.168.178.4
-vanguard.internal   → 192.168.178.5
 ```
 
 > Il dominio `.internal` è lo standard de-facto per le reti private (riserva ICANN
 > proposta) ed evita i problemi di *DNS rebind protection* dei router domestici
 > (es. Fritz!Box) che bloccano risposte con IP privati su TLD sconosciuti.
-> I record dei servizi k8s (es. `argocd.internal`) si aggiungeranno con gli sprint
-> di Fase 1+ tramite Ingress/cert-manager.
+>
+> I **servizi web** del cluster non usano `.internal` ma il sottodominio pubblico
+> **`*.lab.paroparo.it`** (per avere certificati TLS Let's Encrypt validi). Pi-hole
+> fa split-horizon risolvendo `*.lab.paroparo.it → 192.168.178.3` (ingress k3s):
+> vedi [04-tls.md](04-tls.md). Si configura in S3.
 
 ## Verifica
 
@@ -138,17 +138,6 @@ Proxmox UI → houston → Firewall → Options → Firewall: Yes
 | OUT | TCP | 80,443 | any | ACCEPT | aggiornamenti OS + gravity |
 | OUT | any | any | any | DROP | blocca tutto il resto |
 
-**vanguard (step-ca — 192.168.178.5)**
-
-| Direzione | Proto | Porta | Sorgente | Azione | Motivo |
-|---|---|---|---|---|---|
-| IN | TCP | 9000 | `192.168.178.3` (iss) | ACCEPT | ACME dal cluster |
-| IN | TCP | 9000 | workstation | ACCEPT | ACME + admin |
-| IN | TCP | 22 | workstation | ACCEPT | SSH admin |
-| IN | any | any | any | DROP | blocca tutto il resto |
-| OUT | TCP | 80,443 | any | ACCEPT | aggiornamenti OS |
-| OUT | any | any | any | DROP | blocca tutto il resto |
-
 **iss (k3s — 192.168.178.3)**
 
 | Direzione | Proto | Porta | Sorgente | Azione | Motivo |
@@ -174,5 +163,4 @@ La migrazione Flannel → Cilium è pianificata contestualmente a S2 (bootstrap 
 
 - [ ] Firewall abilitato a livello Datacenter e nodo houston
 - [ ] `nmap -p 53 192.168.178.4` risponde solo da LAN, non da internet
-- [ ] `curl https://vanguard.internal:9000/acme/acme/directory` funziona da ISS, non da altri host non autorizzati
 - [ ] API server k3s (6443) raggiungibile solo dalla workstation

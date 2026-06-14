@@ -1,5 +1,5 @@
 # Task condivisi: installano node_exporter su un host.
-# Importati dai playbook dei singoli host (pihole-setup, stepca-setup, houston-setup)
+# Importati dai playbook dei singoli host (pihole-setup, houston-setup)
 # con: ansible.builtin.import_tasks. Ereditano 'become: true' dal play chiamante.
 #
 # node_exporter espone le metriche dell'host (CPU, RAM, disco, rete) su :9100 in

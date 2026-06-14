@@ -17,7 +17,7 @@ Terraform, configurazione in Ansible, applicazioni in Kubernetes via GitOps.
 | Orchestrazione   | k3s (single-node VM)                |
 | GitOps           | ArgoCD                              |
 | Ingress          | Traefik (incluso in k3s)            |
-| TLS              | cert-manager + step-ca (CA di rete) |
+| TLS              | cert-manager + Let's Encrypt (DNS-01 Cloudflare) |
 | DNS              | Pi-hole                             |
 
 ## Architettura
@@ -26,22 +26,22 @@ Terraform, configurazione in Ansible, applicazioni in Kubernetes via GitOps.
                   rete 192.168.178.0/24
   houston  .2  ─  Proxmox VE (hypervisor)
   sentinel .4  ─  LXC  Pi-hole        (DNS + adlists)
-  vanguard .5  ─  LXC  step-ca        (CA di rete, ACME)  ←── altri PC/server
   iss      .3  ─  VM   k3s single-node
                     ├─ Traefik        (ingress)
-                    ├─ cert-manager   (TLS ← step-ca via ACME)
+                    ├─ cert-manager   (TLS ← Let's Encrypt via DNS-01 Cloudflare)
                     ├─ ArgoCD         (app-of-apps)
                     ├─ Sealed Secrets (secret cifrati in Git)
                     └─ app (Fasi 2-4)
 ```
 
-Dominio interno: **`.internal`** (record locali in Pi-hole).
+Dominio host: **`.internal`** (record locali in Pi-hole).
+Servizi web: **`*.lab.paroparo.it`** (TLS Let's Encrypt, split-horizon Pi-hole).
 
 ## Struttura
 
 ```
 terraform/   Infrastruttura (VM, LXC, network)
-ansible/     Provisioning e configurazione (pihole, k3s, step-ca)
+ansible/     Provisioning e configurazione (pihole, k3s)
 k8s/         Manifesti Kubernetes (ArgoCD, infra, apps) — in costruzione
 docs/        Documentazione passo-passo + roadmap
 .github/     Workflow CI/CD
@@ -65,7 +65,7 @@ kubectl get nodes
 
 Costruzione in 4 fasi (dettaglio e Definition of Done in [docs/roadmap.md](docs/roadmap.md)):
 
-1. **Backbone** — Pi-hole, step-ca, k3s, cert-manager, ArgoCD, Sealed Secrets, backup/DR
+1. **Backbone** — Pi-hole, k3s, cert-manager (Let's Encrypt), ArgoCD, Sealed Secrets, backup/DR
 2. **Accesso & osservabilità** — Prometheus+Grafana, host monitoring, Loki, Uptime Kuma, Homepage, Cloudflare Tunnel
 3. **App tue** — deploy di applicazioni proprie sul cluster
 4. **Media** — storage, Jellyfin, download stack, Jellyseerr

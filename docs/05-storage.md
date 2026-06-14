@@ -44,7 +44,7 @@ reale dal giorno 1).
 /dev/nvme0n1  (~465 GiB)
   └── VG: nvme
         └── thinpool nvme (LVM-Thin storage in Proxmox)
-              ├── vm/lxc root disks   (~180 GiB)  iss, sentinel, vanguard, template
+              ├── vm/lxc root disks   (~180 GiB)  iss, sentinel, template
               ├── disco dati ISS      (~250 GiB)  PersistentVolumes k3s → /mnt/k3s-data
               └── margine pool        (~35 GiB)   metadata thin + headroom
 ```

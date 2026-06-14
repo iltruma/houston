@@ -28,7 +28,7 @@ Homelab su Dell Optiplex 3050 (i5-6500T, 16GB RAM, 500GB SSD) con Proxmox VE com
 - **CI/CD**: GitHub Actions + ArgoCD
 - **DNS**: Pihole (LXC container)
 - **Ingress**: Traefik (incluso in k3s)
-- **CA di rete / TLS**: step-ca (LXC) + cert-manager (ACME)
+- **TLS**: Let's Encrypt (challenge DNS-01 via Cloudflare) + cert-manager
 
 ## Struttura
 
@@ -84,6 +84,6 @@ Lo scope è opzionale per modifiche trasversali (es. rinomina globale, refactor 
 - Houston host: 192.168.178.2
 - VM k3s - ISS: 192.168.178.3
 - LXC Pihole - Sentinel: 192.168.178.4
-- LXC step-ca - Vanguard: 192.168.178.5
 - Gateway: 192.168.178.1
-- Dominio interno: `.internal` (record locali gestiti in Pi-hole)
+- Dominio host: `.internal` (record locali gestiti in Pi-hole)
+- Dominio servizi web: `*.lab.paroparo.it` (TLS Let's Encrypt, split-horizon Pi-hole)
