@@ -62,3 +62,48 @@
     - name: Print initial admin password
       ansible.builtin.debug:
         msg: "ArgoCD initial admin password: {{ argocd_password_b64.stdout | b64decode }}"
+
+    # Cambio password admin: gira solo se argocd-initial-admin-secret esiste ancora
+    # (significa che la password non è mai stata cambiata). Dopo il primo run il secret
+    # viene eliminato e il task è idempotente.
+    - name: Check if ArgoCD initial admin secret exists
+      ansible.builtin.command:
+        cmd: k3s kubectl get secret argocd-initial-admin-secret -n argocd
+      register: argocd_initial_secret
+      failed_when: false
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    # La patch viene scritta su file temporaneo per evitare che l'hash bcrypt (con $)
+    # venga espanso dalla shell. Il file viene rimosso subito dopo.
+    - name: Write admin password patch to temp file
+      ansible.builtin.copy:
+        content: |
+          {"stringData":{"admin.password":"{{ argocd_admin_password | password_hash('bcrypt') }}","admin.passwordMtime":"{{ ansible_date_time.iso8601 }}"}}
+        dest: /tmp/argocd-pass-patch.json
+        mode: '0600'
+      when: argocd_initial_secret.rc == 0
+      no_log: true
+
+    - name: Apply admin password patch
+      ansible.builtin.command:
+        cmd: k3s kubectl patch secret argocd-secret -n argocd --type merge --patch-file /tmp/argocd-pass-patch.json
+      when: argocd_initial_secret.rc == 0
+      changed_when: true
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Remove password patch temp file
+      ansible.builtin.file:
+        path: /tmp/argocd-pass-patch.json
+        state: absent
+      when: argocd_initial_secret.rc == 0
+
+    - name: Delete ArgoCD initial admin secret
+      ansible.builtin.command:
+        cmd: k3s kubectl delete secret argocd-initial-admin-secret -n argocd
+      when: argocd_initial_secret.rc == 0
+      changed_when: true
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
