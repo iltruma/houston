@@ -1,0 +1,3 @@
+# ArgoCD Helm chart version (chart v7.x → ArgoCD app v2.13.x).
+# da verificare: https://github.com/argoproj/argo-helm/releases
+argocd_chart_version: "7.8.0"

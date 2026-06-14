@@ -1,0 +1,64 @@
+- name: Install ArgoCD
+  hosts: iss
+  become: true
+
+  tasks:
+    - name: Copy ArgoCD Helm values to remote
+      ansible.builtin.copy:
+        src: ../../k8s/bootstrap/argocd-values.yaml
+        dest: /tmp/argocd-values.yaml
+        mode: '0644'
+
+    # helm repo add è idempotente: se il repo esiste già con la stessa URL
+    # stampa "already exists" su stdout e restituisce exit 0 senza modificare nulla.
+    - name: Add ArgoCD Helm repo
+      ansible.builtin.command: helm repo add argo https://argoproj.github.io/argo-helm
+      register: repo_add
+      changed_when: "'already exists' not in repo_add.stdout"
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Update Helm repos
+      ansible.builtin.command: helm repo update
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Check if ArgoCD is already installed
+      ansible.builtin.command: helm status argocd -n argocd
+      register: argocd_status
+      failed_when: false
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Install ArgoCD via Helm
+      ansible.builtin.command:
+        cmd: >
+          helm install argocd argo/argo-cd
+          --namespace argocd
+          --create-namespace
+          --version {{ argocd_chart_version }}
+          --values /tmp/argocd-values.yaml
+      when: argocd_status.rc != 0
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Wait for ArgoCD server to be ready
+      ansible.builtin.command:
+        cmd: k3s kubectl rollout status deployment/argocd-server -n argocd --timeout=300s
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Get initial admin password
+      ansible.builtin.command:
+        cmd: k3s kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}'
+      register: argocd_password_b64
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Print initial admin password
+      ansible.builtin.debug:
+        msg: "ArgoCD initial admin password: {{ argocd_password_b64.stdout | b64decode }}"
