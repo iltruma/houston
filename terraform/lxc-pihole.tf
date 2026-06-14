@@ -47,4 +47,13 @@ resource "proxmox_virtual_environment_container" "pihole" {
     type             = "debian"
   }
 
+  # Questi campi non sono rileggibili dall'API Proxmox dopo la creazione:
+  # dopo un `terraform import` apparirebbero come "da reimpostare" e forzerebbero
+  # la ricreazione del container. Li ignoriamo per stabilita' dello state.
+  lifecycle {
+    ignore_changes = [
+      initialization[0].user_account,
+      operating_system[0].template_file_id,
+    ]
+  }
 }

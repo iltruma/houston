@@ -23,11 +23,32 @@ resource "proxmox_virtual_environment_vm" "k3s" {
     dedicated = 8192
   }
 
+  # Disco root (vda): clonato dal template (20G) ed espanso a 40G per OS +
+  # immagini container + dati k3s di sistema. Su NVMe per I/O veloce.
+  disk {
+    datastore_id = "nvme"
+    interface    = "virtio0"
+    size         = 40
+  }
+
+  # Disco dati (vdb): nuovo, dedicato ai PersistentVolume di k3s
+  # (Prometheus, Grafana, …). Ansible lo formatta e monta su /mnt/k3s-data.
+  # Vedi docs/05-storage.md.
+  disk {
+    datastore_id = "nvme"
+    interface    = "virtio1"
+    size         = 250
+  }
+
   network_device {
     bridge = "vmbr0"
   }
 
   initialization {
+    # Disco cloud-init su NVMe (il default del provider sarebbe local-lvm,
+    # storage che non esiste piu' dopo il rebuild a due dischi).
+    datastore_id = "nvme"
+
     ip_config {
       ipv4 {
         address = "192.168.178.3/24"
