@@ -34,8 +34,8 @@ Terraform, configurazione in Ansible, applicazioni in Kubernetes via GitOps.
                     └─ app (Fasi 2-4)
 ```
 
-Dominio host: **`.internal`** (record locali in Pi-hole).
-Servizi web: **`*.lab.paroparo.it`** (TLS Let's Encrypt, split-horizon Pi-hole).
+Dominio: **`lab.paroparo.it`** (record locali in Pi-hole; host + servizi web,
+wildcard `*.lab.paroparo.it` → ingress k3s, TLS Let's Encrypt).
 
 ## Struttura
 

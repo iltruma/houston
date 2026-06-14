@@ -77,28 +77,29 @@ ma se si vuole abilitarlo le regole minime per il nodo sono:
 
 I record DNS locali sono gestiti **dichiarativamente** dal playbook
 `pihole-setup.yml` (variabile `pihole_dns_records` in
-`ansible/group_vars/all/vars.yml`), sul dominio interno **`.internal`**:
+`ansible/group_vars/all/vars.yml`), su un unico dominio **`lab.paroparo.it`**:
 
 ```
-houston.internal    → 192.168.178.2
-iss.internal        → 192.168.178.3
-sentinel.internal   → 192.168.178.4
+houston.lab.paroparo.it    → 192.168.178.2
+iss.lab.paroparo.it        → 192.168.178.3
+sentinel.lab.paroparo.it   → 192.168.178.4
 ```
 
-> Il dominio `.internal` è lo standard de-facto per le reti private (riserva ICANN
-> proposta) ed evita i problemi di *DNS rebind protection* dei router domestici
-> (es. Fritz!Box) che bloccano risposte con IP privati su TLD sconosciuti.
+> Usiamo un sottodominio del nostro dominio pubblico (`paroparo.it`, DNS su
+> Cloudflare) **per tutto**, host e servizi web: così i servizi web ottengono
+> certificati TLS Let's Encrypt validi senza una CA privata.
 >
-> I **servizi web** del cluster non usano `.internal` ma il sottodominio pubblico
-> **`*.lab.paroparo.it`** (per avere certificati TLS Let's Encrypt validi). Pi-hole
-> fa split-horizon risolvendo `*.lab.paroparo.it → 192.168.178.3` (ingress k3s):
-> vedi [04-tls.md](04-tls.md). Si configura in S3.
+> I **servizi web** del cluster (`argocd`, `homepage`, …) non hanno record
+> espliciti: li copre il **wildcard** `*.lab.paroparo.it → 192.168.178.3`
+> (ingress k3s) in split-horizon su Pi-hole. Vedi [04-tls.md](04-tls.md). Si
+> configura in S3. *da verificare*: i record host espliciti devono avere
+> precedenza sul wildcard (comportamento dnsmasq).
 
 ## Verifica
 
 - [ ] Proxmox raggiungibile via `ping 192.168.178.2`
 - [ ] VM e LXC hanno connettività internet
-- [ ] Risoluzione DNS funzionante da tutti i nodi (`dig iss.internal @192.168.178.4`)
+- [ ] Risoluzione DNS funzionante da tutti i nodi (`dig iss.lab.paroparo.it @192.168.178.4`)
 - [ ] Dispositivi sulla rete riescono ad accedere alle risorse dell'homelab
 
 ---

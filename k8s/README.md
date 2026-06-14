@@ -14,8 +14,8 @@ k8s/
 │
 └── apps/                       ← una cartella per servizio, con dentro TUTTI i suoi manifest
     ├── argocd/                 ingress + certificate della UI di ArgoCD
-    ├── cert-manager/           ClusterIssuer (step-ca ACME) + root CA + cert di test
-    ├── coredns/                ConfigMap custom: stub zone .internal → Pi-hole
+    ├── cert-manager/           ClusterIssuer (Let's Encrypt ACME, DNS-01 Cloudflare) + cert wildcard
+    ├── coredns/                ConfigMap custom: stub zone lab.paroparo.it → Pi-hole
     ├── homepage/               dashboard dichiarativa dei servizi
     └── sealed-secrets/         controller Sealed Secrets (secret cifrati in Git)
 ```
@@ -50,7 +50,7 @@ Niente file `Application` da scrivere a mano: la cartella *è* l'app.
 
 > ℹ️ ArgoCD fa **polling** del repo ogni ~3 min. I webhook GitHub (sync istantaneo)
 > richiederebbero ArgoCD raggiungibile da internet: non disponibile finché il cluster
-> è solo `.internal` (vedi S12 — Cloudflare Tunnel).
+> è solo su LAN (vedi S12 — Cloudflare Tunnel).
 
 ## Bootstrap (prima installazione, da rifare solo in disaster recovery)
 
@@ -66,6 +66,7 @@ helm install argocd argo/argo-cd -n argocd --create-namespace \
 kubectl apply -f k8s/bootstrap/applicationset.yaml
 ```
 
-> ⚠️ Prerequisito: **cert-manager** installato (controller via Helm) e la root CA di
-> step-ca presente, altrimenti i `Certificate` restano pending. Vedi
-> [docs/04-stepca.md](../docs/04-stepca.md).
+> ⚠️ Prerequisito: **cert-manager** installato (controller via Helm) e il
+> `ClusterIssuer` Let's Encrypt + secret del token Cloudflare configurati,
+> altrimenti i `Certificate` restano pending. Vedi
+> [docs/04-tls.md](../docs/04-tls.md).

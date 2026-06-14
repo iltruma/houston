@@ -15,7 +15,8 @@ si passa al successivo. Le dipendenze determinano l'ordine.
 | `sentinel` | Pi-hole (DNS + adlists)    | LXC  | 192.168.178.4 |
 
 - Gateway: `192.168.178.1`
-- Dominio host: **`.internal`** (record locali in Pi-hole, per accesso diretto agli host)
+- Dominio unico: **`lab.paroparo.it`** (record locali in Pi-hole; host + servizi
+  web via wildcard `*.lab.paroparo.it` → ingress k3s). Niente più `.internal`.
 - Dominio servizi web: **`*.lab.paroparo.it`** (TLS Let's Encrypt, split-horizon
   Pi-hole → ingress k3s `.3`; vedi [04-tls.md](04-tls.md))
 
@@ -37,7 +38,7 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | S6     | Backup / DR    | houston + k3s  | 🔴    | S2         |
 
 **S0 — Pi-hole** · doc: [03-pihole.md](03-pihole.md)
-- Operativo: install v6 unattended, HTTPS sulla web UI, adlist e record DNS `.internal` via API.
+- Operativo: install v6 unattended, HTTPS sulla web UI, adlist e record DNS `lab.paroparo.it` via API.
 - DoD: `ansible-playbook pihole-setup.yml` gira pulito e idempotente; adlist presenti; gravity aggiornato.
 - da verificare: che gli upstream DNS finiscano in `pihole.toml` su v6 (vedi [03-pihole.md](03-pihole.md) §6).
 
@@ -105,10 +106,9 @@ provisioner `local-path` di k3s puntato sull'NVMe (`/mnt/k3s-data`). Il SATA SSD
 ospita invece media e download (Fase 4). Vedi [05-storage.md](05-storage.md) per il
 layout completo dei due dischi.
 
-⚠️ **Cloudflare Tunnel** richiede un **dominio pubblico su Cloudflare** (non `.internal`).
-Espone verso l'esterno solo i servizi scelti; gira come `cloudflared` nel cluster.
-I cert interni `.internal` della CA **non** valgono verso l'esterno: per i servizi
-pubblicati serve un certificato pubblico (Cloudflare origin cert o Let's Encrypt).
+⚠️ **Cloudflare Tunnel** espone verso l'esterno solo i servizi scelti; gira come
+`cloudflared` nel cluster. Usiamo già `paroparo.it` su Cloudflare con certificati
+Let's Encrypt, quindi i servizi pubblicati sono già su un dominio pubblico valido.
 
 ---
 
@@ -168,11 +168,11 @@ disponibili dopo OS e VM). Per una collezione estesa servirà un HDD esterno o N
 - Il router (o Proxmox come router inter-VLAN) applica policy di routing tra VLAN.
 - VLAN 30 (download) non può raggiungere VLAN 10/20 — isolamento hardware
   garantito dallo switch, non solo da firewall software.
-- Gli IP cambiano: le VM vanno riconfigurate e i record DNS `.internal`
+- Gli IP cambiano: le VM vanno riconfigurate e i record DNS `lab.paroparo.it`
   aggiornati nel playbook Pi-hole.
 
 **DoD S18**: `iss`, `sentinel` su VLAN distinte; ping cross-VLAN
-bloccato dove atteso; DNS `.internal` risolve correttamente dai nuovi IP.
+bloccato dove atteso; DNS `lab.paroparo.it` risolve correttamente dai nuovi IP.
 
 ---
 

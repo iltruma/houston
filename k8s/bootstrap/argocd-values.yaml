@@ -1,5 +1,5 @@
 global:
-  domain: argocd.internal
+  domain: argocd.lab.paroparo.it
 
 configs:
   params:

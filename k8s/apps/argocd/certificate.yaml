@@ -9,4 +9,4 @@ spec:
     name: step-ca-acme
     kind: ClusterIssuer
   dnsNames:
-  - argocd.internal
+  - argocd.lab.paroparo.it

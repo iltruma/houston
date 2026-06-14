@@ -61,7 +61,7 @@ sudo dd bs=4M if=proxmox-ve_*.iso of=/dev/sdX status=progress
 7. Password root e email amministratore
 8. Configurazione rete:
    - Management Interface: la porta Ethernet (es. `enp1s0`)
-   - Hostname: `houston.internal`
+   - Hostname: `houston.lab.paroparo.it`
    - IP Address: `192.168.178.2/24`
    - Gateway: `192.168.178.1`
    - DNS Server: `192.168.178.1` (temporaneo, poi sarà Pi-hole su `.4`)

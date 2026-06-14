@@ -25,13 +25,9 @@ data:
             description: DNS & ad-blocking (sentinel)
             icon: pi-hole.png
         - ArgoCD:
-            href: https://argocd.internal
+            href: https://argocd.lab.paroparo.it
             description: GitOps (iss)
             icon: argocd.png
-        - step-ca:
-            href: https://vanguard.internal:9000
-            description: Network CA (vanguard)
-            icon: smallstep.png
 
   widgets.yaml: |
     - resources:

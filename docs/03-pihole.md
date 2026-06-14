@@ -2,7 +2,7 @@
 
 DNS ricorsivo + ad-blocking per tutta la rete dell'homelab. Gira nell'LXC
 `sentinel` (`192.168.178.4`) e fa anche da **server DNS autorevole** per il
-dominio interno `.internal` (record locali tipo `iss.internal`).
+dominio `lab.paroparo.it` (record locali tipo `iss.lab.paroparo.it`).
 
 | Voce        | Valore                                  |
 |-------------|-----------------------------------------|
@@ -38,10 +38,10 @@ Definite in [`ansible/group_vars/all/vars.yml`](../ansible/group_vars/all/vars.y
 ```yaml
 pihole_base_url: "https://192.168.178.4"
 
-pihole_dns_records:                 # record DNS locali (.internal)
-  - { ip: "192.168.178.2", hostname: "houston.internal" }
-  - { ip: "192.168.178.3", hostname: "iss.internal" }
-  - { ip: "192.168.178.4", hostname: "sentinel.internal" }
+pihole_dns_records:                 # record DNS locali (lab.paroparo.it)
+  - { ip: "192.168.178.2", hostname: "houston.lab.paroparo.it" }
+  - { ip: "192.168.178.3", hostname: "iss.lab.paroparo.it" }
+  - { ip: "192.168.178.4", hostname: "sentinel.lab.paroparo.it" }
 
 pihole_adlists:                     # blocklist caricate via API
   - "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
@@ -88,7 +88,7 @@ ansible-playbook -i inventory.yml playbooks/pihole-setup.yml --ask-vault-pass
 ## 5. Verifica (Definition of Done — S0)
 
 - [ ] Web UI raggiungibile: `https://192.168.178.4` (login con `pihole_password`)
-- [ ] Risoluzione locale: `dig iss.internal @192.168.178.4` → `192.168.178.3`
+- [ ] Risoluzione locale: `dig iss.lab.paroparo.it @192.168.178.4` → `192.168.178.3`
 - [ ] Ad-blocking attivo: le adlist compaiono in **Lists** e *gravity* è aggiornato
 - [ ] Il playbook è **idempotente**: una seconda esecuzione gira pulita
 - [ ] Puntare il router (o il DHCP) a `192.168.178.4` come DNS primario

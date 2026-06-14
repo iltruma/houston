@@ -20,7 +20,7 @@ spec:
             - containerPort: 3000
           env:
             - name: HOMEPAGE_ALLOWED_HOSTS
-              value: homepage.internal
+              value: homepage.lab.paroparo.it
           volumeMounts:
             - name: config
               mountPath: /app/config/settings.yaml

@@ -9,4 +9,4 @@ spec:
     name: step-ca-acme
     kind: ClusterIssuer
   dnsNames:
-  - homepage.internal
+  - homepage.lab.paroparo.it

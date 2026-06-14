@@ -7,10 +7,10 @@ spec:
   ingressClassName: traefik
   tls:
   - hosts:
-    - argocd.internal
+    - argocd.lab.paroparo.it
     secretName: argocd-cert-tls
   rules:
-  - host: argocd.internal
+  - host: argocd.lab.paroparo.it
     http:
       paths:
       - path: /

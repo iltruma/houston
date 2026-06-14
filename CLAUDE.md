@@ -85,5 +85,5 @@ Lo scope è opzionale per modifiche trasversali (es. rinomina globale, refactor 
 - VM k3s - ISS: 192.168.178.3
 - LXC Pihole - Sentinel: 192.168.178.4
 - Gateway: 192.168.178.1
-- Dominio host: `.internal` (record locali gestiti in Pi-hole)
-- Dominio servizi web: `*.lab.paroparo.it` (TLS Let's Encrypt, split-horizon Pi-hole)
+- Dominio: `lab.paroparo.it` (record locali in Pi-hole; host + servizi web via
+  wildcard `*.lab.paroparo.it` → ingress k3s; TLS Let's Encrypt). Niente `.internal`.

@@ -7,10 +7,10 @@ spec:
   ingressClassName: traefik
   tls:
   - hosts:
-    - homepage.internal
+    - homepage.lab.paroparo.it
     secretName: homepage-cert-tls
   rules:
-  - host: homepage.internal
+  - host: homepage.lab.paroparo.it
     http:
       paths:
       - path: /
