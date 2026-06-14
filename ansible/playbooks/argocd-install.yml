@@ -41,6 +41,7 @@
           --version {{ argocd_chart_version }}
           --values /tmp/argocd-values.yaml
       when: argocd_status.rc != 0
+      changed_when: argocd_status.rc != 0
       environment:
         KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 

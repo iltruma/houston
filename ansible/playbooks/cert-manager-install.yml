@@ -39,6 +39,7 @@
           --version {{ cert_manager_chart_version }}
           --values /tmp/cert-manager-values.yaml
       when: certmanager_status.rc != 0
+      changed_when: certmanager_status.rc != 0
       environment:
         KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 

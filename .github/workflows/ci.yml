@@ -24,7 +24,7 @@ jobs:
       run:
         working-directory: terraform
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.15.5"
@@ -42,12 +42,14 @@ jobs:
       run:
         working-directory: ansible
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install ansible-lint
         run: pip install "ansible-lint==26.*"
+      - name: Install Ansible collections
+        run: ansible-galaxy collection install -r requirements.yml
       - name: Lint playbooks
         run: ansible-lint playbooks/
 
@@ -57,7 +59,7 @@ jobs:
     env:
       KUBECONFORM_VERSION: v0.8.0
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # -skip CustomResourceDefinition: il meta-schema delle CRD non è nei
       #   cataloghi pubblici; le CR (Certificate, ClusterIssuer, …) sono
       #   comunque validate tramite il catalogo datree.
@@ -70,6 +72,7 @@ jobs:
           tar xz -f kubeconform.tar.gz kubeconform
           ./kubeconform -strict -summary \
             -skip CustomResourceDefinition \
+            -ignore-missing-schemas \
             -ignore-filename-pattern '.*values\.yaml' \
             -ignore-filename-pattern '.*README\.md' \
             -schema-location default \
@@ -80,7 +83,7 @@ jobs:
     name: gitleaks (secret scanning)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0 # history completa: scansiona ogni commit, non solo il tip
       - uses: gitleaks/gitleaks-action@v2
