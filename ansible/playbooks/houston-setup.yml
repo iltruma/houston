@@ -153,7 +153,7 @@
         state: mounted
 
     - name: Mount sata-backup persistently
-      ansible.builtin.mount:
+      ansible.posix.mount:
         path: /mnt/sata-backup
         src: /dev/pve/sata-backup
         fstype: ext4
