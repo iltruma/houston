@@ -1,0 +1,34 @@
+- name: Backup cluster (ISS + sentinel)
+  hosts: houston
+  become: true
+
+  vars:
+    backup_dir: /mnt/sata-backup/dump
+    backup_compress: zstd
+    backup_mode: snapshot
+    backup_keep_last: 3
+
+  tasks:
+    - name: Backup ISS — VM 100 (k3s)
+      ansible.builtin.command:
+        cmd: >
+          vzdump 100
+          --dumpdir {{ backup_dir }}
+          --compress {{ backup_compress }}
+          --mode {{ backup_mode }}
+          --prune-backups keep-last={{ backup_keep_last }}
+      changed_when: true
+      async: 1800
+      poll: 30
+
+    - name: Backup sentinel — LXC 200 (Pi-hole)
+      ansible.builtin.command:
+        cmd: >
+          vzdump 200
+          --dumpdir {{ backup_dir }}
+          --compress {{ backup_compress }}
+          --mode {{ backup_mode }}
+          --prune-backups keep-last={{ backup_keep_last }}
+      changed_when: true
+      async: 1800
+      poll: 30
