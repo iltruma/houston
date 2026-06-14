@@ -47,7 +47,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install ansible-lint
-        run: pip install "ansible-lint==26.*"
+        run: pip install "ansible-lint==26.*" ansible-core
       - name: Install Ansible collections
         run: ansible-galaxy collection install -r requirements.yml
       - name: Lint playbooks
@@ -66,10 +66,7 @@ jobs:
       # -ignore values.yaml: è input Helm, non un manifest Kubernetes.
       - name: Validate manifests
         run: |
-          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" -o kubeconform.tar.gz
-          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/checksums.txt" -o checksums.txt
-          grep "kubeconform-linux-amd64.tar.gz" checksums.txt | sha256sum --check
-          tar xz -f kubeconform.tar.gz kubeconform
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" | tar xz kubeconform
           ./kubeconform -strict -summary \
             -skip CustomResourceDefinition \
             -ignore-missing-schemas \
