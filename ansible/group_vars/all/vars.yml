@@ -8,11 +8,9 @@ pihole_upstream_dns:
   - "1.1.1.1"
   - "8.8.8.8"
 
-pihole_dns_records:
-  # Only explicit host records that must NOT be caught by the wildcard.
-  # houston, sentinel, iris are intentionally absent: the wildcard
-  # *.lab.paroparo.it → 192.168.178.3 routes them through Traefik (TLS proxy).
-  - { ip: "192.168.178.3", hostname: "iss.lab.paroparo.it" }
+# All *.lab.paroparo.it hostnames are handled by the wildcard → Traefik (192.168.178.3).
+# No explicit host records needed: the wildcard covers iss, houston, sentinel, iris, etc.
+pihole_dns_records: []
 
 # Wildcard DNS: *.lab.paroparo.it → ingress k3s (ISS)
 # Configurato via dnsmasq_lines in pihole.toml (Pi-hole v6 non legge /etc/dnsmasq.d/).
