@@ -60,4 +60,8 @@ resource "proxmox_virtual_environment_vm" "k3s" {
       keys     = [var.ssh_public_key]
     }
   }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 }
