@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-lab-paroparo-it
+  namespace: kube-system
+spec:
+  secretName: wildcard-lab-paroparo-it-tls
+  issuerRef:
+    name: letsencrypt-staging   # → letsencrypt-production dopo verifica staging
+    kind: ClusterIssuer
+  dnsNames:
+    - "*.lab.paroparo.it"
+    - "lab.paroparo.it"

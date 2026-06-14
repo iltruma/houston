@@ -8,7 +8,6 @@ spec:
   tls:
   - hosts:
     - argocd.lab.paroparo.it
-    secretName: argocd-cert-tls
   rules:
   - host: argocd.lab.paroparo.it
     http:

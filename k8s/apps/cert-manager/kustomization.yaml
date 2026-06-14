@@ -1,0 +1,11 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Nessun namespace globale: le risorse qui hanno namespace diversi
+# (ClusterIssuer è cluster-scoped; Certificate è in kube-system;
+# cloudflare-api-token SealedSecret sarà in cert-manager).
+resources:
+  - clusterissuer-staging.yaml
+  - clusterissuer-production.yaml
+  - wildcard-certificate.yaml
+  # - cloudflare-api-token-sealedsecret.yaml  # da aggiungere in S5
