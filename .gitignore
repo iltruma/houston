@@ -5,6 +5,7 @@ terraform/.terraform/
 terraform/*.tfstate
 terraform/*.tfstate.backup
 terraform/*.tfvars
+*.tfstate
 !terraform/*.tfvars.example
 
 # Ansible
