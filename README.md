@@ -24,6 +24,7 @@ Terraform, configurazione in Ansible, applicazioni in Kubernetes via GitOps.
 
 ```
                   rete 192.168.178.0/24
+  iris     .1  ─  Router Fritz!Box    (gateway)
   houston  .2  ─  Proxmox VE (hypervisor)
   sentinel .4  ─  LXC  Pi-hole        (DNS + adlists)
   iss      .3  ─  VM   k3s single-node
@@ -40,6 +41,7 @@ wildcard `*.lab.paroparo.it` → ingress k3s, TLS Let's Encrypt).
 ## Struttura
 
 ```
+packer/      Template VM (immagini base Debian per Proxmox)
 terraform/   Infrastruttura (VM, LXC, network)
 ansible/     Provisioning e configurazione (pihole, k3s)
 k8s/         Manifesti Kubernetes (ArgoCD, infra, apps) — in costruzione

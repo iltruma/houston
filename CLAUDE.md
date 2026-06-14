@@ -81,9 +81,9 @@ Lo scope è opzionale per modifiche trasversali (es. rinomina globale, refactor 
 
 ## Network
 
+- Iris (gateway/router Fritz!Box): 192.168.178.1
 - Houston host: 192.168.178.2
 - VM k3s - ISS: 192.168.178.3
 - LXC Pihole - Sentinel: 192.168.178.4
-- Gateway: 192.168.178.1
 - Dominio: `lab.paroparo.it` (record locali in Pi-hole; host + servizi web via
   wildcard `*.lab.paroparo.it` → ingress k3s; TLS Let's Encrypt). Niente `.internal`.

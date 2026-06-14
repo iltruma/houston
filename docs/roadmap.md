@@ -10,6 +10,7 @@ si passa al successivo. Le dipendenze determinano l'ordine.
 
 | Host       | Ruolo                      | Tipo | IP            |
 |------------|----------------------------|------|---------------|
+| `iris`     | Router Fritz!Box (gateway) | hw   | 192.168.178.1 |
 | `houston`  | Hypervisor Proxmox VE      | host | 192.168.178.2 |
 | `iss`      | Cluster k3s (single-node)  | VM   | 192.168.178.3 |
 | `sentinel` | Pi-hole (DNS + adlists)    | LXC  | 192.168.178.4 |

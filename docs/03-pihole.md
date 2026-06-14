@@ -2,7 +2,7 @@
 
 DNS ricorsivo + ad-blocking per tutta la rete dell'homelab. Gira nell'LXC
 `sentinel` (`192.168.178.4`) e fa anche da **server DNS autorevole** per il
-dominio `lab.paroparo.it` (record locali tipo `iss.lab.paroparo.it`).
+dominio `lab.paroparo.it` tramite wildcard `*.lab.paroparo.it → 192.168.178.3`.
 
 | Voce        | Valore                                  |
 |-------------|-----------------------------------------|
@@ -38,10 +38,7 @@ Definite in [`ansible/group_vars/all/vars.yml`](../ansible/group_vars/all/vars.y
 ```yaml
 pihole_base_url: "https://192.168.178.4"
 
-pihole_dns_records:                 # record DNS locali (lab.paroparo.it)
-  - { ip: "192.168.178.2", hostname: "houston.lab.paroparo.it" }
-  - { ip: "192.168.178.3", hostname: "iss.lab.paroparo.it" }
-  - { ip: "192.168.178.4", hostname: "sentinel.lab.paroparo.it" }
+pihole_dns_records: []  # tutti i record coperti dal wildcard *.lab.paroparo.it → 192.168.178.3
 
 pihole_adlists:                     # blocklist caricate via API
   - "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"

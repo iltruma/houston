@@ -133,7 +133,7 @@ S1 ora è solo **strategia + prerequisiti** (l'infra LXC non serve più):
 
 - [x] Dominio `paroparo.it` con DNS su Cloudflare
 - [x] Sottodominio scelto: `lab.paroparo.it`
-- [ ] API token Cloudflare creato e salvato (servirà in S3)
+- [x] API token Cloudflare creato e salvato (servirà in S3)
 - [x] step-ca / LXC `vanguard` rimossi dal repo
 
 Il *Definition of Done* sostanziale (un `Certificate` wildcard emesso e `Ready`,
@@ -150,3 +150,17 @@ firmato da Let's Encrypt) si verifica in **S3**.
   cert-manager). Non adatto a scenari air-gapped — irrilevante per questo homelab.
 - ➖ I cert finiscono nei log di Certificate Transparency: usando **solo il
   wildcard** nei log appare `*.lab.paroparo.it`, non i nomi dei singoli servizi.
+
+---
+
+## 8. Reverse proxy per host fisici
+
+Il namespace `infra-proxy` espone tramite Traefik tre host fisici che non fanno parte del cluster:
+
+| Hostname | Backend | Note |
+|---|---|---|
+| `houston.lab.paroparo.it` | `192.168.178.2:8006` | Proxmox VE (HTTPS, self-signed) |
+| `sentinel.lab.paroparo.it` | `192.168.178.4:443` | Pi-hole (HTTPS, self-signed) |
+| `iris.lab.paroparo.it` | `192.168.178.1:443` | Router Fritz!Box (HTTPS, self-signed) |
+
+Ogni backend usa self-signed cert: un `ServersTransport` con `insecureSkipVerify: true` gestisce la connessione backend. Il certificato esposto al browser è sempre il wildcard Let's Encrypt.

@@ -70,6 +70,11 @@ qm start 100
 > `--storage nvme` — il disco root viene ricreato sul thin pool NVMe.
 > `--force` — necessario se la VM con ID 100 esiste già.
 
+> **Nota Terraform**: la VM k3s ha `lifecycle { prevent_destroy = true }` nella
+> definizione Terraform, quindi un `terraform destroy` fallirebbe su questa risorsa.
+> Per ricrearla via Terraform dopo un restore occorre prima rimuovere (o commentare)
+> il blocco `lifecycle` e poi eseguire `terraform apply`.
+
 ### Restore sentinel (LXC Pi-hole)
 
 ```bash
@@ -99,7 +104,7 @@ Se il SATA SSD (OS Proxmox) è perso ma l'NVMe (dati VM) è intatto:
 
 ## Verifica (Definition of Done — S6)
 
-- [ ] `ansible-playbook backup.yml` completa senza errori
-- [ ] I file `.vma.zst` e `.tar.zst` sono presenti in `/mnt/sata-backup/dump/`
-- [ ] Il processo di restore è documentato e i comandi sono stati verificati
-- [ ] Retention: una seconda esecuzione del playbook lascia al massimo 3 backup
+- [x] `ansible-playbook backup.yml` completa senza errori
+- [x] I file `.vma.zst` e `.tar.zst` sono presenti in `/mnt/sata-backup/dump/`
+- [x] Il processo di restore è documentato e i comandi sono stati verificati
+- [x] Retention: una seconda esecuzione del playbook lascia al massimo 3 backup

@@ -7,7 +7,7 @@ Internet
    │
    ▼
 ┌──────────┐
-│  Router   │  192.168.178.1 (Gateway + DHCP per i client)
+│  iris     │  192.168.178.1 (Router Fritz!Box — Gateway + DHCP per i client)
 └────┬─────┘
      │
      ├── 192.168.178.2   houston   Proxmox VE (host)
@@ -46,6 +46,7 @@ per stabilità. I client generici prendono l'IP dal DHCP del router.
 
 | Host       | Ruolo                      | Tipo | IP            |
 |------------|----------------------------|------|---------------|
+| `iris`     | Router Fritz!Box (gateway) | hw   | 192.168.178.1 |
 | `houston`  | Hypervisor Proxmox VE      | host | 192.168.178.2 |
 | `iss`      | Cluster k3s (single-node)  | VM   | 192.168.178.3 |
 | `sentinel` | Pi-hole (DNS + adlists)    | LXC  | 192.168.178.4 |
@@ -79,21 +80,17 @@ I record DNS locali sono gestiti **dichiarativamente** dal playbook
 `pihole-setup.yml` (variabile `pihole_dns_records` in
 `ansible/group_vars/all/vars.yml`), su un unico dominio **`lab.paroparo.it`**:
 
-```
-houston.lab.paroparo.it    → 192.168.178.2
-iss.lab.paroparo.it        → 192.168.178.3
-sentinel.lab.paroparo.it   → 192.168.178.4
+```yaml
+pihole_dns_records: []  # tutti i record coperti dal wildcard *.lab.paroparo.it → 192.168.178.3
 ```
 
 > Usiamo un sottodominio del nostro dominio pubblico (`paroparo.it`, DNS su
 > Cloudflare) **per tutto**, host e servizi web: così i servizi web ottengono
 > certificati TLS Let's Encrypt validi senza una CA privata.
 >
-> I **servizi web** del cluster (`argocd`, `homepage`, …) non hanno record
-> espliciti: li copre il **wildcard** `*.lab.paroparo.it → 192.168.178.3`
-> (ingress k3s) in split-horizon su Pi-hole. Vedi [04-tls.md](04-tls.md). Si
-> configura in S3. *da verificare*: i record host espliciti devono avere
-> precedenza sul wildcard (comportamento dnsmasq).
+> Tutti i sottodomini `*.lab.paroparo.it` (host fisici e servizi del cluster)
+> risolvono al medesimo IP `192.168.178.3` (ingress k3s) via wildcard dnsmasq in
+> split-horizon su Pi-hole. Vedi [04-tls.md](04-tls.md).
 
 ## Verifica
 
@@ -155,10 +152,10 @@ Proxmox UI → houston → Firewall → Options → Firewall: Yes
 ### Kubernetes NetworkPolicy (intra-cluster)
 
 Il CNI di default di k3s (Flannel) **non** implementa NetworkPolicy. Per
-applicare policy di rete tra i pod del cluster occorre sostituirlo con **Cilium**,
-che supporta anche L7 policy e ha observability integrata (Hubble).
+applicare policy di rete tra i pod del cluster è stato necessario sostituirlo con
+**Cilium**, che supporta anche L7 policy e ha observability integrata (Hubble).
 
-La migrazione Flannel → Cilium è pianificata contestualmente a S2 (bootstrap k3s).
+La migrazione Flannel → Cilium è avvenuta contestualmente a S2 (bootstrap k3s).
 
 ### Verifica Piano A
 

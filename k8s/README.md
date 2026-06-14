@@ -15,8 +15,8 @@ k8s/
 └── apps/                       ← una cartella per servizio, con dentro TUTTI i suoi manifest
     ├── argocd/                 ingress + certificate della UI di ArgoCD
     ├── cert-manager/           ClusterIssuer (Let's Encrypt ACME, DNS-01 Cloudflare) + cert wildcard
-    ├── coredns/                ConfigMap custom: stub zone lab.paroparo.it → Pi-hole
     ├── homepage/               dashboard dichiarativa dei servizi
+    ├── infra-proxy/            Traefik reverse proxy verso host fisici (houston, sentinel, iris)
     └── sealed-secrets/         controller Sealed Secrets (secret cifrati in Git)
 ```
 
