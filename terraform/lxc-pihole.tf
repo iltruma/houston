@@ -33,7 +33,7 @@ resource "proxmox_virtual_environment_container" "pihole" {
   }
 
   disk {
-    datastore_id = "local-lvm"
+    datastore_id = "nvme"
     size         = 4
   }
 
