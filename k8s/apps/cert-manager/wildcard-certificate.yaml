@@ -6,7 +6,7 @@ metadata:
 spec:
   secretName: wildcard-lab-paroparo-it-tls
   issuerRef:
-    name: letsencrypt-staging   # → letsencrypt-production dopo verifica staging
+    name: letsencrypt-production
     kind: ClusterIssuer
   dnsNames:
     - "*.lab.paroparo.it"
