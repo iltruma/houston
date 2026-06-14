@@ -2,10 +2,29 @@
 
 ## Prerequisiti
 
-- Dell Optiplex 3050 (i5-6500T, 16GB RAM, 500GB SSD)
+- Dell Optiplex 3050 (i5-6500T, 16GB RAM)
+- 2 dischi: SATA SSD 500GB (`/dev/sda`) + NVMe 500GB (`/dev/nvme0n1`)
 - Chiavetta USB >= 2GB
 - Monitor e tastiera per installazione iniziale
 - Cavo Ethernet collegato alla rete locale
+
+## 0. BIOS — SATA Operation su AHCI (importante)
+
+Sui Dell Optiplex la voce *SATA Operation* è spesso impostata su **"RAID On"**
+(Intel RST). In questa modalità l'NVMe viene "remappato" dietro il controller
+Intel e **Linux non lo vede**: in `dmesg` compare `Found 1 remapped NVMe devices`,
+`lspci` non trova il controller NVMe e `lsblk` non mostra `/dev/nvme0n1`.
+
+Prima di installare:
+
+1. Riavvia e premi **F2** per entrare nel Setup BIOS.
+2. *System Configuration → SATA Operation* → seleziona **AHCI**.
+3. Salva ed esci (**F10**).
+
+> AHCI espone SATA e NVMe in modo nativo: il kernel vede `sda` (driver `ahci`)
+> e `nvme0n1` (driver `nvme`).
+> ⚠️ Cambiare questa voce rende non avviabile un OS installato in modalità RAID:
+> impostala **prima** di installare Proxmox.
 
 ## 1. Scaricare Proxmox VE ISO
 
@@ -26,8 +45,18 @@ sudo dd bs=4M if=proxmox-ve_*.iso of=/dev/sdX status=progress
 2. Premere F12 per il boot menu, selezionare USB
 3. Selezionare "Install Proxmox VE (Graphical)"
 4. Accettare EULA
-5. Selezionare il disco target (500GB SSD)
-   - Filesystem: **ext4** (più semplice) o **ZFS** (se si vuole snapshot nativi)
+5. Selezionare il disco target: il **SATA SSD** (`/dev/sda`), **non** l'NVMe.
+   - Filesystem: **ext4** (no ZFS — vedi [05-storage.md](05-storage.md)).
+   - Aprire **Options** (opzioni avanzate del partizionamento) e impostare:
+
+     | Opzione | Valore | Perché |
+     |---|---|---|
+     | `swapsize` | 8 | swap (16GB RAM) |
+     | `maxroot` | 50 | dimensione di `pve-root` |
+     | `maxvz` | 0 | **niente `local-lvm` sul SATA**: lo spazio resta libero nel VG `pve` per crearci dopo `sata-media` e `sata-backup` |
+
+   > ⚠️ L'NVMe **non** va toccato dall'installer: lo configuriamo a mano dopo
+   > (sezione 5) come thin pool dedicato a VM e PV k3s.
 6. Configurazione locale (Country: Italy, Timezone: Europe/Rome, Keyboard: Italian)
 7. Password root e email amministratore
 8. Configurazione rete:
@@ -45,50 +74,46 @@ Dopo il reboot, accedere a: `https://192.168.178.2:8006`
 - Username: `root`
 - Realm: `Linux PAM`
 
-### Rimuovere Enterprise Repository
+### Abilitare SSH per Ansible (se non già attivo)
 
 ```bash
-# Commentare o rimuovere il repo enterprise
-sed -i 's/^deb/#deb/' /etc/apt/sources.list.d/pve-enterprise.list
+systemctl status ssh
+# se non gira:
+systemctl enable --now ssh
 ```
 
-### Aggiungere No-Subscription Repository
+Dalla workstation, copia la chiave pubblica:
 
 ```bash
-# Debian 13 "trixie" → Proxmox VE 9.x
-echo "deb http://download.proxmox.com/debian/pve trixie pve-no-subscription" > /etc/apt/sources.list.d/pve-no-subscription.list
+ssh-copy-id -i ~/.ssh/id_ed25519.pub root@192.168.178.2
 ```
 
-> **da verificare**: su Proxmox VE 9 i repository usano il nuovo formato deb822
-> (`/etc/apt/sources.list.d/*.sources`) invece dei classici `.list`. Controlla
-> con `ls /etc/apt/sources.list.d/` quale formato è presente sulla tua installazione.
+### Lanciare il playbook di setup
 
-### Aggiornare il sistema
+Tutto il resto (repo apt, upgrade, popup subscription, thin pool NVMe, LV su SATA,
+registrazione storage Proxmox, node_exporter) è in `ansible/playbooks/houston-setup.yml`.
 
 ```bash
-apt update && apt full-upgrade -y
-reboot
+cd ansible
+ansible-playbook -i inventory.yml playbooks/houston-setup.yml
 ```
 
-### Rimuovere popup subscription (opzionale)
+Il playbook è **idempotente**: può girare più volte senza effetti collaterali.
 
-```bash
-sed -Ezi.bak "s/(Ext\.Msg\.show\(\{\s+title: gettext\('No valid sub)/void\(\{ \/\/\1/g" /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
-systemctl restart pveproxy.service
-```
+Al termine, `pvesm status` deve mostrare quattro storage:
+
+| Nome | Tipo | Cosa contiene |
+|---|---|---|
+| `local` | dir | ISO, template LXC (su SATA `pve-root`) |
+| `nvme` | lvmthin | root disk VM/LXC + immagini (su NVMe) |
+| `sata-media` | dir | disco dati Jellyfin/download (su SATA) |
+| `sata-backup` | dir | target vzdump — S6 Backup/DR (su SATA) |
+
+> Layout completo con tagli di spazio: [05-storage.md](05-storage.md).
 
 ## 5. Configurazione Storage
 
-Di default Proxmox crea:
-- `local` — per ISO, template, backup
-- `local-lvm` — per dischi VM e container
-
-Verificare con:
-```bash
-pvesm status
-```
-
-### Scaricare template container
+## 5. Scaricare template container
 
 ```bash
 # Template Debian 13 per LXC (quello referenziato dai file Terraform)
@@ -113,5 +138,7 @@ reboot
 - [ ] Web UI accessibile su `https://192.168.178.2:8006`
 - [ ] `pveversion` mostra la versione corretta
 - [ ] `apt update` funziona senza errori
-- [ ] Storage `local` e `local-lvm` visibili
+- [ ] OS installato sul **SATA** (`lsblk` mostra `pve` su `/dev/sda`)
+- [ ] Storage visibili: `local`, `nvme`, `sata-media`, `sata-backup`
+- [ ] `/mnt/sata-media` e `/mnt/sata-backup` montati (anche dopo reboot)
 - [ ] Template container scaricato
