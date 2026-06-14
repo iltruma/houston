@@ -24,10 +24,10 @@ jobs:
       run:
         working-directory: terraform
     steps:
-      - uses: actions/checkout@v5
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v6
+      - uses: hashicorp/setup-terraform@v4
         with:
-          terraform_version: "1.15.5"
+          terraform_version: "1.7.5"
       - name: terraform fmt
         run: terraform fmt -check -diff -recursive
       - name: terraform init (no backend)
@@ -42,7 +42,7 @@ jobs:
       run:
         working-directory: ansible
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -59,7 +59,7 @@ jobs:
     env:
       KUBECONFORM_VERSION: v0.8.0
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       # -skip CustomResourceDefinition: il meta-schema delle CRD non è nei
       #   cataloghi pubblici; le CR (Certificate, ClusterIssuer, …) sono
       #   comunque validate tramite il catalogo datree.
@@ -83,9 +83,10 @@ jobs:
     name: gitleaks (secret scanning)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0 # history completa: scansiona ogni commit, non solo il tip
-      - uses: gitleaks/gitleaks-action@v2
+      - uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
