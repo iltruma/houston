@@ -85,14 +85,14 @@ Il dominio `lab.paroparo.it` è pubblico, ma i servizi vivono su IP **privati**
 - **DNS interno (Pi-hole)**: risolve `*.lab.paroparo.it → 192.168.178.3`. Solo i
   client della LAN (che usano Pi-hole come resolver) raggiungono i servizi.
 
-> **da verificare (S3)**: alcuni router (es. Fritz!Box) hanno *DNS rebind
-> protection* che blocca risposte con IP privati per domini pubblici. Nel nostro
-> caso i client interrogano Pi-hole **direttamente**, quindi il router non è nel
-> path DNS e non dovrebbe interferire. Da confermare con `dig argocd.lab.paroparo.it`.
+> **✅ DNS rebind protection (S3 verificato)**: i client interrogano Pi-hole
+> direttamente senza passare dal router, quindi la rebind protection non interferisce.
+> Confermato: `dig argocd.lab.paroparo.it @192.168.178.4` → `192.168.178.3`.
 
-> **da verificare (S3)**: Pi-hole v6 — il wildcard interno si fa con dnsmasq
-> (`address=/lab.paroparo.it/192.168.178.3`). Verificare il meccanismo supportato
-> in v6 (riga in `pihole.toml` `misc.dnsmasq_lines` o file in `/etc/dnsmasq.d/`).
+> **✅ Pi-hole v6 wildcard (S3 verificato)**: Pi-hole v6 non legge `/etc/dnsmasq.d/`
+> automaticamente. La direttiva si inietta via `misc.dnsmasq_lines` in `pihole.toml`:
+> `dnsmasq_lines = ["address=/lab.paroparo.it/192.168.178.3"]`
+> Implementato in `ansible/playbooks/pihole-setup.yml` (task "Configure wildcard DNS").
 
 ---
 

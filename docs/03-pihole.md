@@ -73,6 +73,10 @@ questa lista e si rilancia il playbook (idempotente).
    l'handler **Update gravity** (`POST /api/action/gravity`) che ricompila il DB.
 10. **Record DNS locali** — `PUT /api/config/dns/hosts/{IP%20hostname}`
     (idempotente: 200 = già presente, 201 = creato).
+11. **Wildcard DNS** — imposta `misc.dnsmasq_lines = ["address=/lab.paroparo.it/192.168.178.3"]`
+    in `pihole.toml` via `lineinfile`. Pi-hole v6 non legge `/etc/dnsmasq.d/`
+    automaticamente; `dnsmasq_lines` è il meccanismo ufficiale per direttive custom.
+    Copre tutti i sottodomini `*.lab.paroparo.it` → ingress k3s senza record espliciti.
 
 ---
 
@@ -98,12 +102,13 @@ ansible-playbook -i inventory.yml playbooks/pihole-setup.yml --ask-vault-pass
 
 ## 6. Troubleshooting
 
-**Upstream DNS non applicati su v6** — gli upstream (`1.1.1.1`, `8.8.8.8`) sono
-solo in `setupVars.conf`, che v6 potrebbe non migrare in `pihole.toml`. Controlla:
+**Upstream DNS non applicati su v6** — gli upstream (`1.1.1.1`, `8.8.8.8`) vengono
+passati via `setupVars.conf` e migrati in `pihole.toml` dall'installer v6. Se dopo
+l'install la risoluzione esterna non funziona, controlla:
 ```bash
 grep -A3 "\[dns\]" /etc/pihole/pihole.toml
 ```
-Se mancano gli `upstreams`, vanno impostati lì (è la fonte di verità in v6).
+Se mancano gli `upstreams`, vanno aggiunti lì (è la fonte di verità in v6).
 
 **Campo `port` in `pihole.toml`** — il task HTTPS assume il path del campo `port`.
 Se il restart fallisce, verifica con `grep -n "port" /etc/pihole/pihole.toml`.

@@ -4,8 +4,8 @@ metadata:
   name: coredns-custom
   namespace: kube-system
 data:
-  internal.server: |
-    internal:53 {
+  lab.paroparo.it.server: |
+    lab.paroparo.it:53 {
         errors
         cache 30
         forward . 192.168.178.4

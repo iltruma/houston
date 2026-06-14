@@ -40,7 +40,7 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 **S0 — Pi-hole** · doc: [03-pihole.md](03-pihole.md)
 - Operativo: install v6 unattended, HTTPS sulla web UI, adlist e record DNS `lab.paroparo.it` via API.
 - DoD: `ansible-playbook pihole-setup.yml` gira pulito e idempotente; adlist presenti; gravity aggiornato.
-- da verificare: che gli upstream DNS finiscano in `pihole.toml` su v6 (vedi [03-pihole.md](03-pihole.md) §6).
+- gli upstream DNS vengono migrati in `pihole.toml` dall'installer v6 (vedi [03-pihole.md](03-pihole.md) §6).
 
 **S1 — TLS: strategia Let's Encrypt** · doc: [04-tls.md](04-tls.md)
 - Niente CA privata: certificati pubblici Let's Encrypt via challenge DNS-01 su
@@ -95,7 +95,7 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | Sprint | Servizio              | Stato | Note |
 |--------|-----------------------|-------|------|
 | S7     | Prometheus + Grafana  | 🔴    | `kube-prometheus-stack` via ArgoCD |
-| S8     | Host monitoring       | 🟢    | `node_exporter` su `houston`/`sentinel` → scrape da Prometheus (Proxmox + LXC, non solo il cluster) |
+| S8     | Host monitoring       | 🟡    | `node_exporter` su `houston`/`sentinel` installato; scrape attivo solo dopo S7 (Prometheus) |
 | S9     | Loki                  | 🔴    | log aggregation, datasource in Grafana |
 | S10    | Uptime Kuma           | 🔴    | status page / uptime |
 | S11    | Homepage              | 🟢    | dashboard dichiarativa (YAML in Git) dei servizi |

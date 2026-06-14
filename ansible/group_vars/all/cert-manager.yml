@@ -1,3 +1,2 @@
-# cert-manager Helm chart version (chart version == app version per cert-manager).
-# da verificare: https://github.com/cert-manager/cert-manager/releases
+# cert-manager Helm chart version (chart version == app version for cert-manager).
 cert_manager_chart_version: "v1.16.2"

@@ -111,8 +111,6 @@ Al termine, `pvesm status` deve mostrare quattro storage:
 
 > Layout completo con tagli di spazio: [05-storage.md](05-storage.md).
 
-## 5. Configurazione Storage
-
 ## 5. Scaricare template container
 
 ```bash

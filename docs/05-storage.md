@@ -72,14 +72,15 @@ I PersistentVolumes di k3s e i media non stanno sul root disk della VM: sono
 ### PersistentVolumes k3s su NVMe
 
 Disco da ~250GB allocato sullo storage `nvme` (LVM-thin) e attaccato a ISS come
-`/dev/vdb`:
+`/dev/vdb`, montato su `/mnt/k3s-data` (fatto in S2). I PV vengono creati man mano
+che i servizi vengono deployati (S7 in poi):
 
 ```
 /dev/vdb → /mnt/k3s-data        (provisioner local-path di k3s)
-  ├── PV Prometheus
-  ├── PV Grafana
-  ├── PV Loki
-  └── PV ArgoCD
+  ├── PV Prometheus              (S7)
+  ├── PV Grafana                 (S7)
+  ├── PV Loki                    (S9)
+  └── PV ArgoCD                  (S4 — stateless, no PV)
 ```
 
 ### Media su SATA
