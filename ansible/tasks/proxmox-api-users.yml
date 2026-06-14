@@ -1,0 +1,86 @@
+# Utenti API Proxmox dedicati per Terraform e Packer.
+#
+# Invece di usare root@pam, creiamo due utenti a privilegi limitati che
+# condividono il ruolo "Provisioner" (gestione VM/LXC/dischi/cloud-init/rete,
+# MA niente gestione utenti, reboot host o modifica permessi).
+#
+# Tutto idempotente: ogni risorsa si crea solo se manca. I token NON vengono
+# rigenerati se esistono già (rigenerarli invaliderebbe i secret in uso).
+# Il secret di un token Proxmox è mostrato UNA SOLA VOLTA, alla creazione:
+# il task lo stampa a fine play perché tu lo salvi nel vault / file di config.
+
+# ── Ruolo Provisioner ──────────────────────────────────────────────────────
+
+- name: List existing Proxmox roles
+  ansible.builtin.command: pveum role list
+  register: pve_roles
+  changed_when: false
+
+- name: Create Provisioner role
+  ansible.builtin.command: >
+    pveum role add Provisioner -privs "{{ provisioner_privs }}"
+  when: "'Provisioner' not in pve_roles.stdout"
+
+# ── Utenti + ACL ───────────────────────────────────────────────────────────
+
+- name: List existing Proxmox users
+  ansible.builtin.command: pveum user list
+  register: pve_users
+  changed_when: false
+
+- name: Create API users
+  ansible.builtin.command: pveum user add {{ item }}
+  loop:
+    - terraform@pve
+    - packer@pve
+  when: "item not in pve_users.stdout"
+
+- name: Assign Provisioner role to API users (on /)
+  ansible.builtin.command: >
+    pveum acl modify / -user {{ item }} -role Provisioner
+  loop:
+    - terraform@pve
+    - packer@pve
+  changed_when: false  # pveum acl modify è idempotente lato Proxmox
+
+# ── Token: terraform@pve!terraform ─────────────────────────────────────────
+
+- name: List tokens for terraform@pve
+  ansible.builtin.command: pveum user token list terraform@pve
+  register: tf_tokens
+  changed_when: false
+
+- name: Create terraform token
+  ansible.builtin.command: >
+    pveum user token add terraform@pve terraform --privsep 0 --output-format json
+  register: tf_token_new
+  when: "'terraform' not in tf_tokens.stdout"
+
+# ── Token: packer@pve!packer ───────────────────────────────────────────────
+
+- name: List tokens for packer@pve
+  ansible.builtin.command: pveum user token list packer@pve
+  register: pk_tokens
+  changed_when: false
+
+- name: Create packer token
+  ansible.builtin.command: >
+    pveum user token add packer@pve packer --privsep 0 --output-format json
+  register: pk_token_new
+  when: "'packer' not in pk_tokens.stdout"
+
+# ── Stampa dei secret appena creati (una volta sola) ───────────────────────
+
+- name: Show terraform token secret (SALVALO SUBITO nel vault/config)
+  ansible.builtin.debug:
+    msg: >-
+      terraform token → {{ (tf_token_new.stdout | from_json).value }}
+      (id: terraform@pve!terraform)
+  when: tf_token_new is not skipped
+
+- name: Show packer token secret (SALVALO SUBITO nel vault/config)
+  ansible.builtin.debug:
+    msg: >-
+      packer token → {{ (pk_token_new.stdout | from_json).value }}
+      (id: packer@pve!packer)
+  when: pk_token_new is not skipped
