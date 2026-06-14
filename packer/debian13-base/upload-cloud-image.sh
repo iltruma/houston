@@ -10,7 +10,7 @@ set -euo pipefail
 
 VM_ID="${1:-9000}"
 VM_NAME="debian13-cloud-raw"
-STORAGE="${2:-local-lvm}"
+STORAGE="${2:-nvme}"
 SSH_KEY_FILE="${3:-$HOME/.ssh/id_ed25519.pub}"
 DISK_SIZE="${4:-20G}"
 
@@ -29,7 +29,9 @@ if qm status "$VM_ID" &>/dev/null; then
 fi
 
 echo "==> Download Debian 13 genericcloud image..."
-wget -q --show-progress "$IMAGE_URL" -O "$IMAGE_FILE"
+# -4: forza IPv4. I mirror Debian spesso risolvono in IPv6 ma su reti con
+# connettivita' IPv6 incompleta il download si blocca; IPv4 e' affidabile.
+wget -4 -q --show-progress "$IMAGE_URL" -O "$IMAGE_FILE"
 
 echo "==> Installazione qemu-guest-agent nell'immagine (richiede libguestfs-tools)..."
 if ! command -v virt-customize &>/dev/null; then

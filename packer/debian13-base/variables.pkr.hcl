@@ -5,7 +5,7 @@ variable "proxmox_url" {
 
 variable "proxmox_token_id" {
   type        = string
-  description = "Token ID nel formato user@realm!tokenname, es. root@pam!packer"
+  description = "Token ID nel formato user@realm!tokenname, es. packer@pve!packer"
   sensitive   = true
 }
 
@@ -41,6 +41,6 @@ variable "ssh_private_key_file" {
 
 variable "storage_pool" {
   type        = string
-  default     = "local-lvm"
+  default     = "nvme"
   description = "Pool storage Proxmox per i dischi della VM di build"
 }

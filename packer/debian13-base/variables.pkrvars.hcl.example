@@ -1,9 +1,10 @@
 proxmox_url          = "https://192.168.178.2:8006/api2/json"
 proxmox_node         = "houston"
 
-# Crea il token in Proxmox: Datacenter → Permissions → API Tokens → Add
-# Deseleziona "Privilege Separation" per ereditare i permessi di root@pam
-proxmox_token_id     = "root@pam!packer"
+# Utente + token creati dal playbook ansible/playbooks/houston-setup.yml
+# (tasks/proxmox-api-users.yml). Il secret è stampato a fine playbook, una
+# sola volta: copialo qui.
+proxmox_token_id     = "packer@pve!packer"
 proxmox_token_secret = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
 source_vm_id         = 9000
@@ -12,4 +13,4 @@ target_vm_id         = 9001
 # La chiave pubblica corrispondente deve essere stata passata a upload-cloud-image.sh
 ssh_private_key_file = "~/.ssh/id_ed25519"
 
-storage_pool         = "local-lvm"
+storage_pool         = "nvme"
