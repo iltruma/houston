@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: hashicorp/setup-terraform@v4
         with:
-          terraform_version: "1.7.5"
+          terraform_version: "1.15.5"
       - name: terraform fmt
         run: terraform fmt -check -diff -recursive
       - name: terraform init (no backend)
@@ -89,4 +89,3 @@ jobs:
       - uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
