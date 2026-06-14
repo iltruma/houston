@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: sentinel
+  namespace: infra-proxy
+subsets:
+  - addresses:
+      - ip: 192.168.178.4
+    ports:
+      - port: 443
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sentinel
+  namespace: infra-proxy
+  annotations:
+    traefik.ingress.kubernetes.io/service.serversscheme: https
+    traefik.ingress.kubernetes.io/service.serverstransport: infra-proxy-insecure-tls@kubernetescrd
+spec:
+  ports:
+    - port: 443
+      targetPort: 443
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sentinel
+  namespace: infra-proxy
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - sentinel.lab.paroparo.it
+  rules:
+    - host: sentinel.lab.paroparo.it
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sentinel
+                port:
+                  number: 443

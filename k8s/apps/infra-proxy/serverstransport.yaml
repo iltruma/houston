@@ -1,0 +1,7 @@
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: insecure-tls
+  namespace: infra-proxy
+spec:
+  insecureSkipVerify: true
