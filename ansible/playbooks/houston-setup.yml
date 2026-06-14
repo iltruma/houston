@@ -73,11 +73,10 @@
       changed_when: false
 
     - name: Remove subscription popup from web UI
-      ansible.builtin.command:
-        cmd: >
-          sed -Ezi.bak
-          "s/(Ext\.Msg\.show\(\{\s+title: gettext\('No valid sub)/void\(\{ \/\/\1/g"
-          /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+      ansible.builtin.replace:
+        path: /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+        regexp: "(Ext\\.Msg\\.show\\(\\{\\s+title: gettext\\('No valid sub)"
+        replace: 'void({ //\1'
       when: popup_check.rc != 0
       notify: Restart pveproxy
 
@@ -105,6 +104,7 @@
       ansible.builtin.command:
         cmd: pvesm add lvmthin nvme --vgname nvme --thinpool nvme --content rootdir,images
       when: "'nvme' not in pvesm_status.stdout"
+      changed_when: "'nvme' not in pvesm_status.stdout"
 
     # ── SATA — LV per media e backup ──────────────────────────────────────────
     # Spazio libero nel VG pve (grazie a maxvz=0 durante l'install):
@@ -145,7 +145,7 @@
         - /mnt/sata-backup
 
     - name: Mount sata-media persistently
-      ansible.builtin.mount:
+      ansible.posix.mount:
         path: /mnt/sata-media
         src: /dev/pve/sata-media
         fstype: ext4
@@ -164,11 +164,13 @@
       ansible.builtin.command:
         cmd: pvesm add dir sata-media --path /mnt/sata-media --content images
       when: "'sata-media' not in pvesm_status.stdout"
+      changed_when: "'sata-media' not in pvesm_status.stdout"
 
     - name: Register sata-backup storage in Proxmox
       ansible.builtin.command:
         cmd: pvesm add dir sata-backup --path /mnt/sata-backup --content backup
       when: "'sata-backup' not in pvesm_status.stdout"
+      changed_when: "'sata-backup' not in pvesm_status.stdout"
 
     # ── LXC templates ────────────────────────────────────────────────────────
     # Il template Debian 13 standard va scaricato una volta e usato da Terraform

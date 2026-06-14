@@ -20,6 +20,7 @@
   ansible.builtin.command: >
     pveum role add Provisioner -privs "{{ provisioner_privs }}"
   when: "'Provisioner' not in pve_roles.stdout"
+  changed_when: "'Provisioner' not in pve_roles.stdout"
 
 # ── Utenti + ACL ───────────────────────────────────────────────────────────
 
@@ -34,6 +35,7 @@
     - terraform@pve
     - packer@pve
   when: "item not in pve_users.stdout"
+  changed_when: "item not in pve_users.stdout"
 
 - name: Assign Provisioner role to API users (on /)
   ansible.builtin.command: >
@@ -55,6 +57,7 @@
     pveum user token add terraform@pve terraform --privsep 0 --output-format json
   register: tf_token_new
   when: "'terraform' not in tf_tokens.stdout"
+  changed_when: "'terraform' not in tf_tokens.stdout"
 
 # ── Token: packer@pve!packer ───────────────────────────────────────────────
 
@@ -68,6 +71,7 @@
     pveum user token add packer@pve packer --privsep 0 --output-format json
   register: pk_token_new
   when: "'packer' not in pk_tokens.stdout"
+  changed_when: "'packer' not in pk_tokens.stdout"
 
 # ── Stampa dei secret appena creati (una volta sola) ───────────────────────
 
