@@ -138,12 +138,26 @@
         pihole_dns_result.status == 400 and
         pihole_dns_result.json.error.hint != 'Uniqueness of items is enforced'
 
+    # Wildcard DNS via pihole.toml: Pi-hole v6 non legge /etc/dnsmasq.d/ automaticamente.
+    # Le direttive dnsmasq custom si iniettano tramite dnsmasq_lines in [misc].
+    - name: Configure wildcard DNS for *.{{ pihole_wildcard_domain }}
+      ansible.builtin.lineinfile:
+        path: /etc/pihole/pihole.toml
+        regexp: '^\s*dnsmasq_lines\s*='
+        line: '  dnsmasq_lines = ["address=/{{ pihole_wildcard_domain }}/{{ pihole_wildcard_ip }}"]'
+      notify: Restart pihole-FTL
+
     # Host monitoring: espone le metriche di sentinel su :9100 (vedi tasks/node-exporter.yml)
     - name: Install node_exporter
       ansible.builtin.import_tasks: ../tasks/node-exporter.yml
       tags: node_exporter
 
   handlers:
+    - name: Restart pihole-FTL
+      ansible.builtin.systemd_service:
+        name: pihole-FTL
+        state: restarted
+
     - name: Update gravity
       ansible.builtin.uri:
         url: "{{ pihole_base_url }}/api/action/gravity"

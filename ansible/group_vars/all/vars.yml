@@ -9,12 +9,15 @@ pihole_upstream_dns:
   - "8.8.8.8"
 
 pihole_dns_records:
-  # Host: record espliciti. I servizi web del cluster (argocd, homepage, …) sono
-  # coperti dal wildcard *.lab.paroparo.it -> 192.168.178.3 (ingress k3s), che si
-  # configura in S3. I record host espliciti hanno precedenza sul wildcard.
+  # Host: record espliciti. I record host hanno precedenza sul wildcard sottostante.
   - { ip: "192.168.178.2", hostname: "houston.lab.paroparo.it" }
   - { ip: "192.168.178.3", hostname: "iss.lab.paroparo.it" }
   - { ip: "192.168.178.4", hostname: "sentinel.lab.paroparo.it" }
+
+# Wildcard DNS: *.lab.paroparo.it → ingress k3s (ISS)
+# Configurato via dnsmasq_lines in pihole.toml (Pi-hole v6 non legge /etc/dnsmasq.d/).
+pihole_wildcard_domain: "lab.paroparo.it"
+pihole_wildcard_ip: "192.168.178.3"
 
 pihole_adlists:
   - "https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts"
