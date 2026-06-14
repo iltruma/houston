@@ -1,0 +1,59 @@
+- name: Install cert-manager
+  hosts: iss
+  become: true
+
+  tasks:
+    - name: Copy cert-manager Helm values to remote
+      ansible.builtin.copy:
+        src: ../../k8s/bootstrap/cert-manager-values.yaml
+        dest: /tmp/cert-manager-values.yaml
+        mode: '0644'
+
+    - name: Add Jetstack Helm repo
+      ansible.builtin.command: helm repo add jetstack https://charts.jetstack.io
+      register: repo_add
+      changed_when: "'already exists' not in repo_add.stdout"
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Update Helm repos
+      ansible.builtin.command: helm repo update
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Check if cert-manager is already installed
+      ansible.builtin.command: helm status cert-manager -n cert-manager
+      register: certmanager_status
+      failed_when: false
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Install cert-manager via Helm
+      ansible.builtin.command:
+        cmd: >
+          helm install cert-manager jetstack/cert-manager
+          --namespace cert-manager
+          --create-namespace
+          --version {{ cert_manager_chart_version }}
+          --values /tmp/cert-manager-values.yaml
+      when: certmanager_status.rc != 0
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    # Il webhook valida le risorse Certificate/ClusterIssuer: deve essere Ready
+    # prima che ArgoCD provi ad applicare i manifest di cert-manager.
+    - name: Wait for cert-manager webhook to be ready
+      ansible.builtin.command:
+        cmd: k3s kubectl rollout status deployment/cert-manager-webhook -n cert-manager --timeout=120s
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Wait for cert-manager controller to be ready
+      ansible.builtin.command:
+        cmd: k3s kubectl rollout status deployment/cert-manager -n cert-manager --timeout=120s
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
