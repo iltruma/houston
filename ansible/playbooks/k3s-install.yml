@@ -7,8 +7,37 @@
       ansible.builtin.hostname:
         name: iss
 
-    # set -o pipefail: senza, se curl fallisce la pipe "riesce" comunque
-    # e sh esegue uno script vuoto — l'errore passerebbe inosservato.
+    # ── Disco dati per i PersistentVolume (vdb → /mnt/k3s-data) ────────────────
+    # Il filesystem module e' idempotente: formatta solo se il disco non ha gia'
+    # un ext4 (non riformatta a ogni run, quindi non distrugge dati).
+
+    - name: Format data disk as ext4
+      community.general.filesystem:
+        fstype: ext4
+        dev: "{{ k3s_data_disk }}"
+
+    - name: Create k3s data mount point
+      ansible.builtin.file:
+        path: "{{ k3s_data_mount }}"
+        state: directory
+        mode: '0755'
+
+    - name: Mount data disk persistently
+      ansible.builtin.mount:
+        path: "{{ k3s_data_mount }}"
+        src: "{{ k3s_data_disk }}"
+        fstype: ext4
+        opts: defaults
+        state: mounted
+
+    # ── Install k3s SENZA CNI (Cilium lo fornisce dopo) ───────────────────────
+    # --flannel-backend=none: disabilita il CNI di default (Flannel)
+    # --disable-network-policy: disabilita il controller NetworkPolicy di k3s
+    #   (kube-router); le policy le gestira' Cilium.
+    # Teniamo kube-proxy (niente --disable-kube-proxy) per semplicita'.
+    #
+    # set -o pipefail: senza, se curl fallisce la pipe "riesce" comunque e sh
+    # esegue uno script vuoto — l'errore passerebbe inosservato.
     - name: Install k3s
       ansible.builtin.shell: |
         set -o pipefail
@@ -18,13 +47,74 @@
         creates: /usr/local/bin/k3s
       environment:
         INSTALL_K3S_VERSION: "{{ k3s_version }}"
+        INSTALL_K3S_EXEC: "--flannel-backend=none --disable-network-policy"
+
+    - name: Wait for kubeconfig to be written
+      ansible.builtin.wait_for:
+        path: /etc/rancher/k3s/k3s.yaml
+        timeout: 120
+
+    - name: Wait for k3s API to be ready
+      ansible.builtin.command: k3s kubectl get --raw=/readyz
+      register: api_ready
+      until: api_ready.rc == 0
+      retries: 20
+      delay: 6
+      changed_when: false
+
+    # ── Cilium (CNI) via Helm ─────────────────────────────────────────────────
+    # Installato DOPO k3s: l'agent Cilium gira come DaemonSet con hostNetwork,
+    # quindi parte senza CNI e fa il bootstrap della rete. Mettere Cilium tra i
+    # manifest auto-deploy di k3s darebbe deadlock (il job d'install avrebbe
+    # bisogno della rete dei pod, che ancora non esiste).
+
+    - name: Download helm
+      ansible.builtin.get_url:
+        url: "https://get.helm.sh/helm-{{ helm_version }}-linux-amd64.tar.gz"
+        dest: "/tmp/helm-{{ helm_version }}.tar.gz"
+        mode: '0644'
+
+    - name: Extract helm
+      ansible.builtin.unarchive:
+        src: "/tmp/helm-{{ helm_version }}.tar.gz"
+        dest: /tmp/
+        remote_src: true
+        creates: /tmp/linux-amd64/helm
+
+    - name: Install helm binary
+      ansible.builtin.copy:
+        src: /tmp/linux-amd64/helm
+        dest: /usr/local/bin/helm
+        mode: '0755'
+        remote_src: true
+
+    - name: Check if Cilium is already installed
+      ansible.builtin.command: helm status cilium -n kube-system
+      register: cilium_status
+      failed_when: false
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Install Cilium via Helm
+      ansible.builtin.command:
+        cmd: >
+          helm install cilium cilium
+          --repo https://helm.cilium.io
+          --version {{ cilium_version }}
+          --namespace kube-system
+          --set operator.replicas=1
+          --set ipam.mode=kubernetes
+      when: cilium_status.rc != 0
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
     - name: Wait for k3s node to be Ready
       ansible.builtin.command: k3s kubectl get nodes
       register: nodes_output
       until: "'Ready' in nodes_output.stdout"
-      retries: 20
-      delay: 15
+      retries: 30
+      delay: 10
       changed_when: false
 
     - name: Fetch kubeconfig to workstation

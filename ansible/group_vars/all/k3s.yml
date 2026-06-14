@@ -1,6 +1,21 @@
 # Variables for the k3s cluster (host: iss)
 #
-# Version is pinned so a re-provision rebuilds the SAME cluster instead of
-# whatever happens to be the latest stable that day. Bump it deliberately:
+# Versions are pinned so a re-provision rebuilds the SAME cluster instead of
+# whatever happens to be the latest stable that day. Bump them deliberately:
 # https://github.com/k3s-io/k3s/releases
 k3s_version: "v1.35.5+k3s1"
+
+# Disco dati dedicato ai PersistentVolume di k3s (vdb), montato su k3s_data_mount.
+# Vedi docs/05-storage.md. Il re-targeting del provisioner local-path su questo
+# path si fa in S7 (persistenza).
+k3s_data_disk: /dev/vdb
+k3s_data_mount: /mnt/k3s-data
+
+# CNI: sostituiamo Flannel con Cilium (NetworkPolicy + Hubble). Installato via
+# Helm dopo k3s. da verificare l'ultima stabile:
+# https://github.com/cilium/cilium/releases
+cilium_version: "1.16.5"
+
+# Helm client (binario scaricato sulla VM per installare Cilium). da verificare:
+# https://github.com/helm/helm/releases
+helm_version: "v3.16.3"
