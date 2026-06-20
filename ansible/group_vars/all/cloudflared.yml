@@ -1,12 +1,10 @@
 # Cloudflare Tunnel (cloudflared) — version pins + public hostnames.
 #
-# Source of truth per:
-# - CNAMEs DNS pubblici (creati via Cloudflare API dal playbook)
-# - Ingress rules del ConfigMap (rigenerato dal playbook)
+# Source of truth per ConfigMap: cloudflared_public_hostnames.
+# Il playbook renderizza k8s/apps/cloudflared/configmap.yaml da questa lista.
 #
-# Aggiungere un nuovo servizio esterno = una entry in
-# cloudflared_public_hostnames, poi rilanciare il playbook e fare
-# commit del configmap.yaml rigenerato.
+# CNAMEs DNS: creati manualmente nella Cloudflare Zero Trust dashboard
+# (Networks → Tunnels → homelab → Public Hostname).
 
 # Image: pin specifico, release ~monthly.
 cloudflared_image: "cloudflare/cloudflared:2025.5.0"
@@ -23,21 +21,8 @@ cloudflared_tunnel_name: "homelab"
 # È stabile, non cambia. Va messo qui (o in vault, ma è tecnicamente pubblico).
 cloudflared_tunnel_id: "1331f5a1-7a1b-402f-a59e-d03d56360f82"
 
-# Cloudflare Zone ID per paroparo.it. Lo trovi nella dashboard
-# Cloudflare → paroparo.it → Overview → API → Zone ID. Stabile, non cambia.
-cloudflare_zone_id: "fc30439add4e613fd429dcd15e2fd58d"
-
-# Dove trovare il Cloudflare API token (Secret k8s esistente, creato da
-# cert-manager-install per la challenge DNS-01). Stesso scope
-# "Zone / DNS / Edit" che serve a noi. Nessun copia-incolla nel vault.
-cloudflare_api_token_secret:
-  namespace: cert-manager
-  name: cloudflare-api-token
-  key: api-token
-
-# Lista dichiarativa dei public hostnames. Ogni entry genera:
-#   1. un CNAME DNS: <hostname> → <tunnel_id>.cfargotunnel.com (proxied)
-#   2. una ingress rule nel ConfigMap di cloudflared
+# Lista dichiarativa dei public hostnames.
+# Il playbook renderizza il ConfigMap da questa lista.
 #
 # Formato:
 #   - hostname:    FQDN pubblico (es. uptime.paroparo.it)

@@ -17,14 +17,14 @@ viva; il traffico in ingresso da Cloudflare rientra da quel tunnel.
 
 ## Pattern
 
-**Single source of truth: `cloudflared_public_hostnames`** in
+**Single source of truth per ConfigMap: `cloudflared_public_hostnames`** in
 `ansible/group_vars/all/cloudflared.yml`.
 
-Ogni entry genera automaticamente:
-1. un **CNAME DNS** in Cloudflare (via API) → `<tunnel-id>.cfargotunnel.com`
-2. una **ingress rule** nel ConfigMap di cloudflared (rigenerato e committato)
+Ogni entry genera automaticamente una **ingress rule** nel ConfigMap di cloudflared
+(rigenerato e committato).
 
-Per aggiungere un servizio esterno = una riga in `cloudflared.yml` + rerun del playbook + commit.
+**CNAMEs DNS**: creati **manualmente** nella Cloudflare Zero Trust dashboard
+(Networks → Tunnels → homelab → Public Hostname). Non automatizzati per ora.
 
 **File roles**:
 
@@ -35,9 +35,6 @@ Per aggiungere un servizio esterno = una riga in `cloudflared.yml` + rerun del p
 - Il **Secret** `cloudflared-credentials` contiene il `TUNNEL_TOKEN`. NON è
   in Git: viene applicato a ogni run del playbook leggendo
   `cloudflared_tunnel_token` dal vault (stesso pattern di argocd/grafana)
-- Il **Cloudflare API token** per creare i CNAME è letto dal Secret k8s
-  esistente `cert-manager/cloudflare-api-token` (stesso usato per la
-  challenge DNS-01 di cert-manager). Niente copia-incolla nel vault.
 
 ## Architettura
 
@@ -66,9 +63,9 @@ k8s/apps/cloudflared/
   └─ kustomization.yaml
 
 ansible/
-  ├─ group_vars/all/cloudflared.yml    # tunnel_id, zone_id, public_hostnames
+  ├─ group_vars/all/cloudflared.yml    # tunnel_id, public_hostnames
   ├─ files/cloudflared/config.yaml     # mirror per test locale (generato)
-  └─ playbooks/cloudflared-install.yml # API Cloudflare + render configmap + Secret
+  └─ playbooks/cloudflared-install.yml # render configmap + Secret
 ```
 
 ## Decisioni tecniche
@@ -110,16 +107,16 @@ ansible/
 4. Nella schermata "Install connector", **copia solo il token**
    (un JWT lungo che inizia con `eyJhIjoi...`)
 5. **NON** eseguire il comando proposto (lo gestiamo via Ansible)
-6. Nella sezione "Public Hostname" **non aggiungere nulla**: lo fa il
-   playbook leggendo `cloudflared_public_hostnames`
+6. Nella sezione "Public Hostname", aggiungi manualmente:
+   - Subdomain: `uptime`, Domain: `paroparo.it`, Service:
+     `http://uptime-kuma.uptime-kuma.svc.cluster.local:3001`
+   (ArgoCD e altri servizi si aggiungeranno in seguito, **v1 = solo Kuma**)
 7. Annotati il **Tunnel ID** (UUID) — lo trovi nella dashboard dopo la
    creazione, oppure nei log del pod dopo il primo deploy. Va in
    `cloudflared_tunnel_id` in `cloudflared.yml`.
 
-> **Nota**: il playbook creerà i CNAME DNS via API per ogni entry in
-> `cloudflared_public_hostnames`. Se avevi già aggiunto public hostname
-> a mano nella dashboard, il playbook li lascia (non tocca quelli che
-> non sono in `cloudflared_public_hostnames`).
+> **Nota**: i CNAME DNS si creano manualmente nella dashboard. Il playbook
+> renderizza solo il ConfigMap (ingress rules) da `cloudflared_public_hostnames`.
 
 ### 2. Aggiungere il token al vault Ansible
 
@@ -150,13 +147,11 @@ ansible-playbook -i inventory.yml playbooks/cloudflared-install.yml
 ```
 
 Il playbook:
-1. Legge il Cloudflare API token dal Secret k8s esistente
-2. Crea/aggiorna i CNAME per ogni entry in `cloudflared_public_hostnames`
-3. Renderizza `k8s/apps/cloudflared/configmap.yaml` (NUOVO, con header
+1. Renderizza `k8s/apps/cloudflared/configmap.yaml` (NUOVO, con header
    "GENERATED, do not edit")
-4. Applica il Secret `cloudflared-credentials` con il `TUNNEL_TOKEN`
-5. Forza ArgoCD a sincronizzare
-6. Aspetta che i pod siano Ready e verifica `/ready`
+2. Applica il Secret `cloudflared-credentials` con il `TUNNEL_TOKEN`
+3. Forza ArgoCD a sincronizzare
+4. Aspetta che i pod siano Ready e verifica `/ready`
 
 ### 5. Commit + push del configmap.yaml generato
 
@@ -185,9 +180,11 @@ Nella dashboard Cloudflare (Zero Trust → Tunnels → homelab):
 ### Aggiungere un nuovo servizio pubblico (futuro)
 
 1. Aggiungi una entry in `cloudflared_public_hostnames` in `cloudflared.yml`
-2. Rilancia il playbook
-3. Fai `git diff` → `git add` → `git commit` → `git push`
-4. Il CNAME DNS + la ingress rule in cloudflared sono già attivi
+2. Aggiungi manualmente il public hostname nella Cloudflare dashboard
+   (Networks → Tunnels → homelab → Public Hostname)
+3. Rilancia il playbook
+4. Fai `git diff` → `git add` → `git commit` → `git push`
+5. La ingress rule in cloudflared è già attiva
 
 ## Definition of Done
 
