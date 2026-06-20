@@ -1,23 +1,52 @@
-# Cloudflare Tunnel (cloudflared) version pins and non-secret config.
+# Cloudflare Tunnel (cloudflared) — version pins + public hostnames.
 #
-# Docs: https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/
+# Source of truth per:
+# - CNAMEs DNS pubblici (creati via Cloudflare API dal playbook)
+# - Ingress rules del ConfigMap (rigenerato dal playbook)
 #
-# The tunnel TOKEN lives in ansible/group_vars/all/vault.yml as
-# `cloudflared_tunnel_token` (Ansible Vault, encrypted at rest).
-# It's created once via the Cloudflare Zero Trust dashboard and pasted into
-# the vault. Rotation: generate a new token, update the vault, re-run the
-# playbook. The cloudflared pods will pick it up via Deployment rollout.
-#
-# Public DNS (CNAME → tunnel endpoint) is managed in the Cloudflare
-# dashboard when you add a "public hostname" to the tunnel.
+# Aggiungere un nuovo servizio esterno = una entry in
+# cloudflared_public_hostnames, poi rilanciare il playbook e fare
+# commit del configmap.yaml rigenerato.
 
-# Image: pin a specific version. cloudflared releases ~monthly.
+# Image: pin specifico, release ~monthly.
 cloudflared_image: "cloudflare/cloudflared:2025.5.0"
 
-# 2 replicas is the official recommendation: multiple cloudflared instances
-# can serve the same tunnel (no separate tunnel per pod needed).
+# 2 repliche (HA minima). Più repliche = over-engineering per homelab.
 cloudflared_replicas: 2
 
-# Tunnel name as shown in the Cloudflare Zero Trust dashboard.
-# Must match what you created.
+# Tunnel name come nella Cloudflare Zero Trust dashboard.
 cloudflared_tunnel_name: "homelab"
+
+# Tunnel ID (UUID, NON il nome). Lo trovi:
+# - nei log del pod cloudflared ("INF Starting tunnel tunnelID=...")
+# - nella Cloudflare dashboard → Zero Trust → Networks → Tunnels → homelab
+# È stabile, non cambia. Va messo qui (o in vault, ma è tecnicamente pubblico).
+cloudflared_tunnel_id: "1331f5a1-7a1b-402f-a59e-d03d56360f82"
+
+# Cloudflare Zone ID per paroparo.it. Lo trovi nella dashboard
+# Cloudflare → paroparo.it → Overview → API → Zone ID. Stabile, non cambia.
+cloudflare_zone_id: "fc30439add4e613fd429dcd15e2fd58d"
+
+# Dove trovare il Cloudflare API token (Secret k8s esistente, creato da
+# cert-manager-install per la challenge DNS-01). Stesso scope
+# "Zone / DNS / Edit" che serve a noi. Nessun copia-incolla nel vault.
+cloudflare_api_token_secret:
+  namespace: cert-manager
+  name: cloudflare-api-token
+  key: api-token
+
+# Lista dichiarativa dei public hostnames. Ogni entry genera:
+#   1. un CNAME DNS: <hostname> → <tunnel_id>.cfargotunnel.com (proxied)
+#   2. una ingress rule nel ConfigMap di cloudflared
+#
+# Formato:
+#   - hostname:    FQDN pubblico (es. uptime.paroparo.it)
+#   - service:     URL del Service k8s interno
+#   - no_tls_verify: true per HTTPS interno (default true, omettilo per HTTP)
+cloudflared_public_hostnames:
+  - hostname: uptime.paroparo.it
+    service: http://uptime-kuma.uptime-kuma.svc.cluster.local:3001
+    no_tls_verify: true
+  # - hostname: argocd.paroparo.it
+  #   service: http://argocd-server.argocd.svc.cluster.local:80
+  #   no_tls_verify: true
