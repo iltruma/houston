@@ -83,6 +83,22 @@ L'installazione è **completamente GitOps**: nessun `helm install` o
 4. Visitare `https://uptime.lab.paroparo.it`, completare il wizard
    iniziale (crea utente admin), configurare i primi monitor.
 
+## Configurazione monitor (manuale, via web UI)
+
+**Decisione (2026-06-20)**: i monitor si configurano a mano dalla web UI.
+Niente playbook Ansible, niente GitOps sui monitor.
+
+**Motivazione**: Uptime Kuma 2.x non ha un'ecosistema stabile per
+l'automazione lato Ansible:
+- la libreria `lucasheld/uptime-kuma-api` (PyPI) supporta solo 1.21-1.23
+- la collection `lucasheld/ansible-uptime-kuma` si basa su quella
+- il PR ufficiale per REST API in Uptime Kuma è ancora draft (milestone 3.1)
+- i bridge community esistenti (es. `pr1ncey1987/uptime-kuma-api-v2`,
+  12★) sono troppo freschi per GitOps serio
+
+Per homelab con 10-15 monitor il web UI è la scelta giusta. Rivedibile
+in futuro se cresce a 50+ monitor o se esce un'API REST ufficiale.
+
 ## Monitor suggeriti (post-install via web UI)
 
 | Monitor | Tipo | Target | Cosa verifica |
