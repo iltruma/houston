@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: uptime-kuma
+  namespace: uptime-kuma
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - uptime.lab.paroparo.it
+      # Secret name not set: Traefik uses the default wildcard secret
+      # (wildcard-lab-paroparo-it-tls) from kube-system for *.lab.paroparo.it.
+  rules:
+    - host: uptime.lab.paroparo.it
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: uptime-kuma
+                port:
+                  number: 3001
