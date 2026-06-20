@@ -1,0 +1,23 @@
+# Cloudflare Tunnel (cloudflared) version pins and non-secret config.
+#
+# Docs: https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/
+#
+# The tunnel TOKEN lives in ansible/group_vars/all/vault.yml as
+# `cloudflared_tunnel_token` (Ansible Vault, encrypted at rest).
+# It's created once via the Cloudflare Zero Trust dashboard and pasted into
+# the vault. Rotation: generate a new token, update the vault, re-run the
+# playbook. The cloudflared pods will pick it up via Deployment rollout.
+#
+# Public DNS (CNAME → tunnel endpoint) is managed in the Cloudflare
+# dashboard when you add a "public hostname" to the tunnel.
+
+# Image: pin a specific version. cloudflared releases ~monthly.
+cloudflared_image: "cloudflare/cloudflared:2025.5.0"
+
+# 2 replicas is the official recommendation: multiple cloudflared instances
+# can serve the same tunnel (no separate tunnel per pod needed).
+cloudflared_replicas: 2
+
+# Tunnel name as shown in the Cloudflare Zero Trust dashboard.
+# Must match what you created.
+cloudflared_tunnel_name: "homelab"

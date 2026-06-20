@@ -1,0 +1,81 @@
+- name: Install Cloudflare Tunnel (cloudflared) in k3s
+  hosts: iss
+  become: true
+
+  tasks:
+    # ── Secret: tunnel token from vault ──────────────────────────────
+    # Stesso pattern di argocd-install.yml e monitoring-install.yml:
+    # scriviamo il manifest a file (niente shell-escape sul JWT) e poi
+    # kubectl apply (idempotente). Il Secret NON è in Git: viene
+    # rigenerato a ogni run leggendo cloudflared_tunnel_token dal vault.
+    - name: Render cloudflared-credentials Secret manifest
+      ansible.builtin.copy:
+        content: |
+          apiVersion: v1
+          kind: Secret
+          metadata:
+            name: cloudflared-credentials
+            namespace: cloudflared
+            labels:
+              app.kubernetes.io/name: cloudflared
+          type: Opaque
+          stringData:
+            token: "{{ cloudflared_tunnel_token | trim }}"
+        dest: /tmp/cloudflared-credentials-secret.yaml
+        mode: '0600'
+      no_log: true
+
+    - name: Apply cloudflared-credentials Secret
+      ansible.builtin.command:
+        cmd: k3s kubectl apply -f /tmp/cloudflared-credentials-secret.yaml
+      changed_when: true
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+      no_log: true
+
+    # ── Wait for ArgoCD to create the namespace + ConfigMap ──────────
+    # Il Deployment in k8s/apps/cloudflared/ dipende dal ConfigMap
+    # cloudflared-config e dal namespace cloudflared. Senza quelli, i pod
+    # restano in ContainerCreating. Aspettiamo che ArgoCD sincronizzi.
+    - name: Wait for cloudflared namespace to be created by ArgoCD
+      ansible.builtin.command:
+        cmd: k3s kubectl get namespace cloudflared
+      register: ns_check
+      until: ns_check.rc == 0
+      retries: 60
+      delay: 5
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Wait for cloudflared-config ConfigMap to be created by ArgoCD
+      ansible.builtin.command:
+        cmd: k3s kubectl get configmap cloudflared-config -n cloudflared
+      register: cm_check
+      until: cm_check.rc == 0
+      retries: 60
+      delay: 5
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    # ── Wait for rollout ─────────────────────────────────────────────
+    - name: Wait for cloudflared Deployment to be ready
+      ansible.builtin.command:
+        cmd: k3s kubectl rollout status deployment/cloudflared -n cloudflared --timeout=300s
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    # ── Verify tunnel is connected to Cloudflare ────────────────────
+    # /ready returns 200 only if cloudflared has an active connection
+    # to the Cloudflare edge. If the token is wrong or the tunnel is
+    # mis-configured, this fails.
+    - name: Verify cloudflared /ready endpoint on first pod
+      ansible.builtin.command:
+        cmd: k3s kubectl exec -n cloudflared -l app=cloudflared -- wget -q -O - http://localhost:2000/ready
+      register: cf_ready
+      changed_when: false
+      failed_when: "'ok' not in cf_ready.stdout"
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml

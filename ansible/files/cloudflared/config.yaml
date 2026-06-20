@@ -1,0 +1,27 @@
+# cloudflared config for homelab tunnel.
+# Mirrored in k8s/apps/cloudflared/configmap.yaml (ArgoCD-managed).
+# Use this file to test locally:
+#   cloudflared tunnel --config config.yaml run
+#
+# Public hostnames: add them in the Cloudflare Zero Trust dashboard
+# (Networks → Tunnels → homelab → Public Hostname). The dashboard
+# creates the CNAME records automatically.
+
+tunnel: homelab
+credentials-file: /etc/cloudflared/creds/credentials.json
+
+metrics: 0.0.0.0:2000
+no-autoupdate: true
+
+ingress:
+  - hostname: uptime.paroparo.it
+    service: http://uptime-kuma.uptime-kuma.svc.cluster.local:3001
+    originRequest:
+      noTLSVerify: true
+
+  - hostname: argocd.paroparo.it
+    service: http://argocd-server.argocd.svc.cluster.local:80
+    originRequest:
+      noTLSVerify: true
+
+  - service: http_status:404

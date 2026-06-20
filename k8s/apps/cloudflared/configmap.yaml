@@ -1,0 +1,42 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudflared-config
+  namespace: cloudflared
+  labels:
+    app.kubernetes.io/name: cloudflared
+data:
+  # config.yaml for cloudflared.
+  # tunnel + credentials-file reference the Secret created by Ansible
+  # (cloudflared-credentials, key=token → mounted as /etc/cloudflared/creds/credentials.json).
+  #
+  # Ingress rules: first match wins, last rule is the catch-all 404.
+  # Public DNS (CNAME) is created in the Cloudflare dashboard, not here.
+  config.yaml: |
+    tunnel: homelab
+    credentials-file: /etc/cloudflared/creds/credentials.json
+
+    metrics: 0.0.0.0:2000
+
+    # autoupdate is wrong in k8s: the pod is replaced by a Deployment
+    # rollout, so an auto-updated binary is lost. Disable it.
+    no-autoupdate: true
+
+    ingress:
+      # Uptime Kuma (public read access via tunnel).
+      # No TLS verify on the internal side: k3s uses a wildcard cert from
+      # cert-manager; we still want to trust it. Default `service` uses
+      # HTTPS, but we need `noTLSVerify: true` for the internal hop.
+      - hostname: uptime.paroparo.it
+        service: http://uptime-kuma.uptime-kuma.svc.cluster.local:3001
+        originRequest:
+          noTLSVerify: true
+
+      # ArgoCD UI (public read/write access via tunnel).
+      - hostname: argocd.paroparo.it
+        service: http://argocd-server.argocd.svc.cluster.local:80
+        originRequest:
+          noTLSVerify: true
+
+      # Catch-all: 404 for any hostname not listed above.
+      - service: http_status:404
