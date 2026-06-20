@@ -93,11 +93,15 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 
 ## Fase 2 — Accesso & osservabilità
 
+> ⏸️ **IN HOLD** (2026-06-20): un tentativo di Prometheus+Grafana+Loki+Alloy
+> ha funzionato ma ha richiesto troppa complessità e decisioni ripetute.
+> Rimandato a data da destinarsi. Per ora si resta con Fase 1 completa.
+
 | Sprint | Servizio              | Stato | Note |
 |--------|-----------------------|-------|------|
-| S7     | Prometheus + Grafana  | 🔴    | `kube-prometheus-stack` via ArgoCD |
-| S8     | Host monitoring       | 🟡    | `node_exporter` su `houston`/`sentinel` installato; scrape attivo solo dopo S7 (Prometheus) |
-| S9     | Loki                  | 🔴    | log aggregation, datasource in Grafana |
+| S7     | Prometheus + Grafana  | 🔴    | `kube-prometheus-stack` via ArgoCD — **HOLD** |
+| S8     | Host monitoring       | 🟡    | `node_exporter` su `houston`/`sentinel` installato; scrape attivo solo dopo S7 (Prometheus) — **HOLD** |
+| S9     | Loki                  | 🔴    | log aggregation, datasource in Grafana — **HOLD** |
 | S10    | Uptime Kuma           | 🔴    | status page / uptime |
 | S11    | Homepage              | 🟢    | dashboard dichiarativa (YAML in Git) dei servizi |
 | S12    | Cloudflare Tunnel     | 🔴    | accesso remoto inbound senza aprire porte |
