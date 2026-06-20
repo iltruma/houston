@@ -102,7 +102,7 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | S7     | Prometheus + Grafana  | 🔴    | `kube-prometheus-stack` via ArgoCD — **HOLD** |
 | S8     | Host monitoring       | 🟡    | `node_exporter` su `houston`/`sentinel` installato; scrape attivo solo dopo S7 (Prometheus) — **HOLD** |
 | S9     | Loki                  | 🔴    | log aggregation, datasource in Grafana — **HOLD** |
-| S10    | Uptime Kuma           | 🔴    | status page / uptime |
+| S10    | Uptime Kuma           | 🟢    | Status page + monitor (HTTP/TCP/DNS/ping). `uptime.lab.paroparo.it`, raw manifest in `k8s/apps/uptime-kuma/`, ArgoCD GitOps. Doc: [09-uptime-kuma.md](09-uptime-kuma.md) — verificato 2026-06-20 |
 | S11    | Homepage              | 🟢    | dashboard dichiarativa (YAML in Git) dei servizi |
 | S12    | Cloudflare Tunnel     | 🔴    | accesso remoto inbound senza aprire porte |
 
