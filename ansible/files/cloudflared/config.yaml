@@ -19,9 +19,4 @@ ingress:
     originRequest:
       noTLSVerify: true
 
-  - hostname: argocd.paroparo.it
-    service: http://argocd-server.argocd.svc.cluster.local:80
-    originRequest:
-      noTLSVerify: true
-
   - service: http_status:404

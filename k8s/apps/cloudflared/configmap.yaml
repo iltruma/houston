@@ -23,18 +23,12 @@ data:
     no-autoupdate: true
 
     ingress:
-      # Uptime Kuma (public read access via tunnel).
+      # Uptime Kuma (v1: unico servizio esposto).
       # No TLS verify on the internal side: k3s uses a wildcard cert from
       # cert-manager; we still want to trust it. Default `service` uses
       # HTTPS, but we need `noTLSVerify: true` for the internal hop.
       - hostname: uptime.paroparo.it
         service: http://uptime-kuma.uptime-kuma.svc.cluster.local:3001
-        originRequest:
-          noTLSVerify: true
-
-      # ArgoCD UI (public read/write access via tunnel).
-      - hostname: argocd.paroparo.it
-        service: http://argocd-server.argocd.svc.cluster.local:80
         originRequest:
           noTLSVerify: true
 

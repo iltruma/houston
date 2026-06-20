@@ -99,8 +99,7 @@ ansible/
 6. Nella sezione "Public Hostname", aggiungi:
    - Subdomain: `uptime`, Domain: `paroparo.it`, Service:
      `http://uptime-kuma.uptime-kuma.svc.cluster.local:3001`
-   - Subdomain: `argocd`, Domain: `paroparo.it`, Service:
-     `http://argocd-server.argocd.svc.cluster.local:80`
+   (ArgoCD e altri servizi si aggiungeranno in seguito, **v1 = solo Kuma**)
 7. (Opzionale, v2) abilita Cloudflare Access policies per proteggere
    gli endpoint pubblici.
 
@@ -162,7 +161,6 @@ Nella dashboard Cloudflare (Zero Trust → Tunnels → homelab) dovresti vedere:
 - [x] `/ready` endpoint OK (tunnel connesso)
 - [x] Dashboard Cloudflare: tunnel `homelab` Healthy
 - [x] `https://uptime.paroparo.it` raggiungibile da rete esterna
-- [x] `https://argocd.paroparo.it` raggiungibile da rete esterna
 
 ## Note future (v2)
 
