@@ -7,15 +7,15 @@ metadata:
     app.kubernetes.io/name: cloudflared
 data:
   # config.yaml for cloudflared.
-  # tunnel + credentials-file reference the Secret created by Ansible
-  # (cloudflared-credentials, key=token → mounted as /etc/cloudflared/creds/credentials.json).
+  # Il token (TUNNEL_TOKEN env var) è self-contained: contiene già
+  # tunnel ID + credenziali. NON mettere `tunnel:` o `credentials-file:`
+  # qui — quei campi servono per il vecchio flusso con cert.pem e
+  # fanno fallire con l'errore "Cannot determine default origin
+  # certificate path".
   #
   # Ingress rules: first match wins, last rule is the catch-all 404.
-  # Public DNS (CNAME) is created in the Cloudflare dashboard, not here.
+  # Public DNS (CNAME) si crea nella dashboard Cloudflare, non qui.
   config.yaml: |
-    tunnel: homelab
-    credentials-file: /etc/cloudflared/creds/credentials.json
-
     metrics: 0.0.0.0:2000
 
     # autoupdate is wrong in k8s: the pod is replaced by a Deployment

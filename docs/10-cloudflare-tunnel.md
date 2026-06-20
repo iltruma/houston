@@ -68,9 +68,12 @@ ansible/
   rollout, un binario auto-updated andrebbe perso.
 - **`readOnlyRootFilesystem` + `emptyDir` su `/tmp`**: richiesto da
   cloudflared per file temporanei.
-- **`credentials-file: /etc/cloudflared/creds/credentials.json`**:
-  il Secret viene montato come file (formato richiesto da cloudflared).
-  Alternativa env var `TUNNEL_TOKEN` esiste ma il file è più pulito.
+- **`TUNNEL_TOKEN` env var**: il token JWT (lungo `eyJhIjoi...`) letto dal
+  Secret è self-contained: contiene già tunnel ID + credenziali. È
+  l'unica auth necessaria, **non** servono `tunnel:` o
+  `credentials-file:` nella config (sono del vecchio flusso con
+  cert.pem e fanno fallire con "Cannot determine default origin
+  certificate path").
 - **`runAsUser: 65532` (nobody)**: l'image ufficiale di cloudflared gira
   come utente non-root.
 - **No Cloudflare Access/Zero Trust policies** in v1: chi sa l'URL entra.

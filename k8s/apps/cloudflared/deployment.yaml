@@ -25,6 +25,16 @@ spec:
         - name: cloudflared
           image: cloudflare/cloudflared:2025.5.0
           imagePullPolicy: IfNotPresent
+          env:
+            # TUNNEL_TOKEN: il JWT lungo creato nella dashboard Cloudflare.
+            # cloudflared estrae tunnel ID e credenziali da qui. Non serve
+            # né `tunnel:` né `credentials-file:` nella config quando si
+            # usa TUNNEL_TOKEN.
+            - name: TUNNEL_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: cloudflared-credentials
+                  key: token
           args:
             - tunnel
             - --config
@@ -47,7 +57,7 @@ spec:
               memory: 128Mi
           securityContext:
             runAsNonRoot: true
-            runAsUser: 65532      # nobody
+            runAsUser: 65532
             runAsGroup: 65532
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
@@ -60,21 +70,12 @@ spec:
             - name: config
               mountPath: /etc/cloudflared/config
               readOnly: true
-            - name: creds
-              mountPath: /etc/cloudflared/creds
-              readOnly: true
             - name: tmp
               mountPath: /tmp
       volumes:
         - name: config
           configMap:
             name: cloudflared-config
-        - name: creds
-          secret:
-            secretName: cloudflared-credentials
-            items:
-              - key: token
-                path: credentials.json
         - name: tmp
           emptyDir: {}
       securityContext:

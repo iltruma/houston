@@ -1,14 +1,14 @@
 # cloudflared config for homelab tunnel.
 # Mirrored in k8s/apps/cloudflared/configmap.yaml (ArgoCD-managed).
-# Use this file to test locally:
-#   cloudflared tunnel --config config.yaml run
 #
-# Public hostnames: add them in the Cloudflare Zero Trust dashboard
-# (Networks → Tunnels → homelab → Public Hostname). The dashboard
-# creates the CNAME records automatically.
-
-tunnel: homelab
-credentials-file: /etc/cloudflared/creds/credentials.json
+# Il token (TUNNEL_TOKEN env var) è self-contained: contiene già
+# tunnel ID + credenziali. NON mettere `tunnel:` o `credentials-file:`
+# qui — fanno fallire con l'errore "Cannot determine default origin
+# certificate path".
+#
+# Public hostnames: aggiungili nella Cloudflare Zero Trust dashboard
+# (Networks → Tunnels → homelab → Public Hostname). La dashboard
+# crea i CNAME records automaticamente.
 
 metrics: 0.0.0.0:2000
 no-autoupdate: true
