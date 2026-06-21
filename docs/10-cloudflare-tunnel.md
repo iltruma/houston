@@ -12,7 +12,7 @@ viva; il traffico in ingresso da Cloudflare rientra da quel tunnel.
 
 | Componente | Versione | Note |
 |---|---|---|
-| `cloudflared` | `2025.5.0` (image) | ultima 2025.x, pin |
+| `cloudflared` | `2026.6.0` (image) | ultima 2026.x, pin |
 | Tunnel name | `homelab` | creato una volta in Cloudflare Zero Trust |
 
 ## Pattern
@@ -32,8 +32,7 @@ committano.
 - Il **Secret** `cloudflared-credentials` contiene il `TUNNEL_TOKEN`. È in Git
   cifrato come **SealedSecret** (`cloudflared-credentials-sealedsecret.yaml`):
   ArgoCD lo applica e il controller Sealed Secrets lo decifra in-cluster nel
-  Secret montato dal pod. Il playbook Ansible non applica più nulla: fa solo
-  da smoke test del rollout.
+  Secret montato dal pod. Nessun Ansible coinvolto: cloudflared è 100% GitOps.
 
 ## Architettura
 
@@ -61,9 +60,6 @@ k8s/apps/cloudflared/
   ├─ cloudflared-credentials-sealedsecret.yaml # TUNNEL_TOKEN cifrato (GitOps)
   ├─ deployment.yaml                           # 2 repliche, readOnlyRootFilesystem
   └─ kustomization.yaml
-
-ansible/
-  └─ playbooks/cloudflared-install.yml # solo smoke test del rollout (nessun secret)
 ```
 
 ## Decisioni tecniche
@@ -145,12 +141,11 @@ git add k8s/apps/cloudflared/ && git commit -m "feat(k8s): seal cloudflared tunn
 ```
 
 ArgoCD applica Namespace, ConfigMap, SealedSecret e Deployment; il controller
-decifra il SealedSecret nel Secret `cloudflared-credentials`. Opzionale, come
-smoke test del rollout:
+decifra il SealedSecret nel Secret `cloudflared-credentials`. Smoke test del
+rollout (opzionale):
 
 ```bash
-cd ansible
-ansible-playbook -i inventory.yml playbooks/cloudflared-install.yml
+kubectl -n cloudflared rollout status deploy/cloudflared
 ```
 
 ### 4. Verifica da esterno
@@ -179,7 +174,6 @@ ArgoCD lo sincronizza e il controller aggiorna il Secret.
 ## Definition of Done
 
 - [x] 4 file in `k8s/apps/cloudflared/` committati
-- [x] Playbook Ansible committato (smoke test)
 - [x] Token cifrato come SealedSecret in Git
 - [x] Pod `cloudflared` 2/2 Running
 - [x] `/ready` endpoint OK (tunnel connesso)

@@ -3,7 +3,7 @@
 # Versions are pinned so a re-provision rebuilds the SAME cluster instead of
 # whatever happens to be the latest stable that day. Bump them deliberately:
 # https://github.com/k3s-io/k3s/releases
-k3s_version: "v1.35.5+k3s1"
+k3s_version: "v1.35.6+k3s1"
 
 # Disco dati dedicato ai PersistentVolume di k3s (vdb), montato su k3s_data_mount.
 # Vedi docs/05-storage.md. Il re-targeting del provisioner local-path su questo
@@ -11,10 +11,11 @@ k3s_version: "v1.35.5+k3s1"
 k3s_data_disk: /dev/vdb
 k3s_data_mount: /mnt/k3s-data
 
-# CNI: sostituiamo Flannel con Cilium (NetworkPolicy + Hubble). Installato via
-# Helm dopo k3s. da verificare l'ultima stabile:
+# CNI: Cilium 1.18 LTS (sostituisce Flannel per NetworkPolicy + Hubble).
+# Cilium 1.16 è EOL dal 2026-02-03 (https://endoflife.ai/cilium/1.16) e non
+# riceve più patch: bumpato a 1.18.x, ramo LTS. Installato via Helm dopo k3s.
 # https://github.com/cilium/cilium/releases
-cilium_version: "1.16.5"
+cilium_version: "1.18.10"
 
 # Helm client (binario scaricato sulla VM per installare Cilium). da verificare:
 # https://github.com/helm/helm/releases

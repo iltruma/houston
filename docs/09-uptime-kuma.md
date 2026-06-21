@@ -13,7 +13,7 @@ complemento "binario su/giù" focalizzato sull'utente.
 
 | Componente | Versione | Note |
 |---|---|---|
-| Uptime Kuma | `2.3.0` (image) | ultima stabile 2.x, DB SQLite embedded |
+| Uptime Kuma | `2.3.0` (image) | pin 2.x, DB SQLite embedded |
 | Manifest | raw k8s + Kustomize | stesso pattern di `homepage/`, no Helm chart esterno |
 
 ## Pattern

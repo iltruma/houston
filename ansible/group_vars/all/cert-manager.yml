@@ -1,2 +1,5 @@
 # cert-manager Helm chart version (chart version == app version for cert-manager).
-cert_manager_chart_version: "v1.16.2"
+# v1.16.5: ultime patch di sicurezza upstream (Go 1.23, fix CVE-2025-22871,
+# CVE-2025-22872, CVE-2025-30204, go-jose).
+# https://github.com/cert-manager/cert-manager/releases
+cert_manager_chart_version: "v1.16.5"

@@ -1,2 +1,6 @@
 # ArgoCD Helm chart version (chart v7.x → ArgoCD app v2.13.x).
-argocd_chart_version: "7.8.0"
+# 7.9.0+: include Redis 7.2 (OSS) invece di 7.4 non-OSS. Le release 7.7.2-7.8.x
+# usano una versione di Redis non più open source; Argo Helm consiglia di
+# passare a ≥7.9.0 o disabilitare redis-ha.
+# https://github.com/argoproj/argo-helm/blob/main/charts/argo-cd/README.md
+argocd_chart_version: "7.9.0"

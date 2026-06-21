@@ -23,7 +23,7 @@ spec:
       automountServiceAccountToken: false
       containers:
         - name: cloudflared
-          image: cloudflare/cloudflared:2025.5.0
+          image: cloudflare/cloudflared:2026.6.0
           imagePullPolicy: IfNotPresent
           env:
             # TUNNEL_TOKEN: il JWT lungo creato nella dashboard Cloudflare.
