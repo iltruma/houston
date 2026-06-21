@@ -3,9 +3,13 @@ kind: Kustomization
 
 # Nessun namespace globale: le risorse qui hanno namespace diversi
 # (ClusterIssuer è cluster-scoped; Certificate è in kube-system;
-# cloudflare-api-token SealedSecret sarà in cert-manager).
+# il Secret cloudflare-api-token vive in cert-manager).
 resources:
   - clusterissuer-staging.yaml
   - clusterissuer-production.yaml
   - wildcard-certificate.yaml
-  # - cloudflare-api-token-sealedsecret.yaml  # da aggiungere in S5
+
+# Il Secret cloudflare-api-token (DNS-01) sarà cifrato con SOPS+age e
+# generato da KSOPS al sync di ArgoCD (S5, da aggiungere).
+# generators:
+#   - ./secret-generator.yaml
