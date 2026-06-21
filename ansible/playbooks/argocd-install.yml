@@ -32,8 +32,8 @@
       environment:
         KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
-    # upgrade --install: idempotente. Applica i valori (incl. KSOPS) a ogni
-    # run, sia al primo install sia agli aggiornamenti successivi.
+    # upgrade --install: idempotente. Applica i valori a ogni run, sia al
+    # primo install sia agli aggiornamenti successivi.
     - name: Install/upgrade ArgoCD via Helm
       ansible.builtin.command:
         cmd: >
