@@ -101,6 +101,45 @@ pihole_dns_records: []  # tutti i record coperti dal wildcard *.lab.paroparo.it 
 
 ---
 
+## Cilium CNI (S2 — k3s bootstrap)
+
+Flannel, il CNI di default di k3s, **non** implementa `NetworkPolicy` né
+offre observability. Per avere policy L3/L7 tra i pod e Hubble per le metriche
+è stato sostituito con **Cilium** (1.18.x LTS) contestualmente al bootstrap di
+S2.
+
+Il setup è in [`ansible/playbooks/k3s-install.yml`](../ansible/playbooks/k3s-install.yml)
+(task "Install Cilium via Helm"), versione pinnata in
+[`ansible/group_vars/all/k3s.yml`](../ansible/group_vars/all/k3s.yml):
+
+```yaml
+k3s_version: "v1.35.6+k3s1"
+cilium_version: "1.18.10"   # LTS (1.16 EOL feb 2026)
+```
+
+**Perché Cilium e non Flannel:**
+
+- `NetworkPolicy` (incluse L7) — sicurezza intra-cluster (S8, S16)
+- **Hubble** per observability dei flussi pod-to-pod
+- eBPF nativo (più performante di iptables)
+- Sostituisce anche kube-proxy con eBPF (modalità `kubeProxyReplacement`)
+
+**Ordine di installazione** (critico): k3s senza CNI → Cilium (DaemonSet con
+`hostNetwork`, fa bootstrap della rete pod) → tutto il resto. Installare Cilium
+*prima* di k3s darebbe deadlock: l'agent Cilium deve avere il nodo già
+registrato.
+
+**Verifica S2:**
+
+```bash
+export KUBECONFIG=~/.kube/config-k3s
+kubectl get pods -n kube-system -l k8s-app=cilium
+# tutti Running
+cilium status --brief
+```
+
+---
+
 ## Sicurezza di rete — Piano A (Proxmox Firewall, senza switch managed)
 
 Senza uno switch managed non è possibile fare isolamento VLAN a livello hardware
@@ -148,14 +187,6 @@ Proxmox UI → houston → Firewall → Options → Firewall: Yes
 
 > Le regole OUT di `iss` si restringeranno ulteriormente in S16 (download stack):
 > il traffico torrent di qBittorrent dovrà uscire **solo** via VPN egress.
-
-### Kubernetes NetworkPolicy (intra-cluster)
-
-Il CNI di default di k3s (Flannel) **non** implementa NetworkPolicy. Per
-applicare policy di rete tra i pod del cluster è stato necessario sostituirlo con
-**Cilium**, che supporta anche L7 policy e ha observability integrata (Hubble).
-
-La migrazione Flannel → Cilium è avvenuta contestualmente a S2 (bootstrap k3s).
 
 ### Verifica Piano A
 
