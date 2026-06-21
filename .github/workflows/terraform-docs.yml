@@ -1,0 +1,45 @@
+# terraform-docs — genera inputs/outputs del root module.
+# Su PR/push su main: rigenera terraform/README.md e propone il diff.
+# Su PR da fork i permessi di scrittura sui workflow files sono limitati
+# dal GitHub token, quindi in quel caso il job fallirà di proposito (non
+# modifica risorse da contributor non trusted). I maintainer possono
+# applicare la patch localmente con `terraform-docs markdown table .`.
+name: terraform-docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'terraform/**/*.tf'
+      - 'terraform/.terraform.lock.hcl'
+      - '.github/workflows/terraform-docs.yml'
+  pull_request:
+    paths:
+      - 'terraform/**/*.tf'
+      - 'terraform/.terraform.lock.hcl'
+      - '.github/workflows/terraform-docs.yml'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  docs:
+    name: Generate terraform/README.md
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install terraform-docs
+        uses: terraform-docs/gh-actions@v1
+        with:
+          working-dir: terraform
+          git-push: 'true'
+          output-file: README.md
+          output-method: inject
+          config-file: .terraform-docs.yml

@@ -1,0 +1,10 @@
+formatter: markdown table
+version: ">= 0.18.0"
+
+sections:
+  show:
+    - requirements
+    - providers
+    - resources
+    - inputs
+    - outputs
