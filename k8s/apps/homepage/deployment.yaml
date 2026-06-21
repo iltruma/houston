@@ -57,9 +57,9 @@ spec:
             limits:
               memory: 256Mi
           securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            runAsGroup: 1000
+            # homepage all'avvio crea i config di default in /app/config:
+            # deve girare come root (UID dell'image) per scriverci. Niente
+            # runAsNonRoot/runAsUser qui. Resto dell'hardening invariato.
             allowPrivilegeEscalation: false
             capabilities:
               drop:
