@@ -32,16 +32,18 @@
       environment:
         KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
-    - name: Install ArgoCD via Helm
+    # upgrade --install: idempotente. Applica i valori (incl. KSOPS) a ogni
+    # run, sia al primo install sia agli aggiornamenti successivi.
+    - name: Install/upgrade ArgoCD via Helm
       ansible.builtin.command:
         cmd: >
-          helm install argocd argo/argo-cd
+          helm upgrade --install argocd argo/argo-cd
           --namespace argocd
           --create-namespace
           --version {{ argocd_chart_version }}
           --values /tmp/argocd-values.yaml
-      when: argocd_status.rc != 0
-      changed_when: argocd_status.rc != 0
+      register: argocd_helm
+      changed_when: "'has been upgraded' in argocd_helm.stdout or argocd_status.rc != 0"
       environment:
         KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
@@ -52,21 +54,10 @@
       environment:
         KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
-    - name: Get initial admin password
-      ansible.builtin.command:
-        cmd: k3s kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}'
-      register: argocd_password_b64
-      changed_when: false
-      environment:
-        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
-
-    - name: Print initial admin password
-      ansible.builtin.debug:
-        msg: "ArgoCD initial admin password: {{ argocd_password_b64.stdout | b64decode }}"
-
-    # Cambio password admin: gira solo se argocd-initial-admin-secret esiste ancora
-    # (significa che la password non è mai stata cambiata). Dopo il primo run il secret
-    # viene eliminato e il task è idempotente.
+    # Cambio password admin: tutto il blocco seguente gira SOLO se
+    # argocd-initial-admin-secret esiste ancora (= password mai cambiata).
+    # Dopo il primo run il secret viene eliminato, quindi nei run successivi
+    # questi task vengono saltati e il playbook resta idempotente.
     - name: Check if ArgoCD initial admin secret exists
       ansible.builtin.command:
         cmd: k3s kubectl get secret argocd-initial-admin-secret -n argocd
@@ -75,6 +66,20 @@
       changed_when: false
       environment:
         KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Get initial admin password
+      ansible.builtin.command:
+        cmd: k3s kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath='{.data.password}'
+      register: argocd_password_b64
+      when: argocd_initial_secret.rc == 0
+      changed_when: false
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Print initial admin password
+      ansible.builtin.debug:
+        msg: "ArgoCD initial admin password: {{ argocd_password_b64.stdout | b64decode }}"
+      when: argocd_initial_secret.rc == 0
 
     # La patch viene scritta su file temporaneo per evitare che l'hash bcrypt (con $)
     # venga espanso dalla shell. Il file viene rimosso subito dopo.
