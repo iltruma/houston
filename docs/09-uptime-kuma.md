@@ -18,7 +18,7 @@ complemento "binario su/giù" focalizzato sull'utente.
 
 ## Pattern
 
-Identico a `homepage/`:
+Identico a `homepage/` e `sealed-secrets/`:
 
 - `k8s/apps/uptime-kuma/`: namespace + PVC + Deployment + Service + Ingress
 - ArgoCD (via ApplicationSet *git directory generator*) crea l'Application

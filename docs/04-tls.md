@@ -108,7 +108,7 @@ Il dominio `lab.paroparo.it` è pubblico, ma i servizi vivono su IP **privati**
 3. **k3s + cert-manager** in piedi (Sprint S2 + S3).
 
 > ⚠️ Il token Cloudflare va trattato come una credenziale: finirà in un
-> **Secret cifrato con SOPS+age** (S5), **mai in chiaro nel repo**.
+> **Sealed Secret** (S5) o comunque in un Secret cifrato, **mai in chiaro nel repo**.
 
 ---
 

@@ -16,7 +16,8 @@ k8s/
     ├── argocd/                 ingress + certificate della UI di ArgoCD
     ├── cert-manager/           ClusterIssuer (Let's Encrypt ACME, DNS-01 Cloudflare) + cert wildcard
     ├── homepage/               dashboard dichiarativa dei servizi
-    └── infra-proxy/            Traefik reverse proxy verso host fisici (houston, sentinel, iris)
+    ├── infra-proxy/            Traefik reverse proxy verso host fisici (houston, sentinel, iris)
+    └── sealed-secrets/         controller Sealed Secrets (secret cifrati in Git)
 ```
 
 Due livelli, con ruoli distinti:
