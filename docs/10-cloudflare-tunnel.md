@@ -100,7 +100,7 @@ k8s/apps/cloudflared/
 3. Nome: `homelab`
 4. Nella schermata "Install connector", **copia solo il token**
    (un JWT lungo che inizia con `eyJhIjoi...`)
-5. **NON** eseguire il comando proposto (lo gestiamo via Ansible)
+5. **NON** eseguire il comando proposto (gestiamo il token via SealedSecret, vedi sotto)
 6. Nella sezione "Public Hostname", aggiungi manualmente:
    - Subdomain: `uptime`, Domain: `paroparo.it`, Service:
      `http://uptime-kuma.uptime-kuma.svc.cluster.local:3001`

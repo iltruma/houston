@@ -58,7 +58,12 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 
 **S2 — k3s: completare il bootstrap**
 - Ansible: fetch del kubeconfig in locale, riscrittura IP server, verifica nodo `Ready`.
-- DoD: `kubectl get nodes` mostra `iss` Ready dalla workstation.
+- **CNI: Cilium** (sostituisce Flannel per NetworkPolicy + Hubble). Installato via
+  Helm in `k3s-install.yml` subito dopo k3s, *prima* di qualsiasi altro manifest
+  (è un DaemonSet con `hostNetwork`, fa bootstrap della rete pod).
+  Pin: 1.18.x (LTS) — Cilium 1.16 è EOL dal 2026-02-03.
+- DoD: `kubectl get nodes` mostra `iss` Ready dalla workstation; `kubectl get pods -n kube-system`
+  mostra `cilium-*` Running; un `CiliumNetworkPolicy` di test viene accettato dal validator.
 
 **S3 — cert-manager: TLS automatici da Let's Encrypt** · doc: [04-tls.md](04-tls.md)
 - `ClusterIssuer` ACME verso Let's Encrypt con solver DNS-01 Cloudflare (token in
