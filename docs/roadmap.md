@@ -110,7 +110,7 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | S9     | Loki                  | 🔴    | log aggregation, datasource in Grafana — **HOLD** |
 | S10    | Uptime Kuma           | 🟢    | Status page + monitor (HTTP/TCP/DNS/ping). `uptime.lab.paroparo.it`, raw manifest in `k8s/apps/uptime-kuma/`, ArgoCD GitOps. Doc: [09-uptime-kuma.md](09-uptime-kuma.md) — verificato 2026-06-20 |
 | S11    | Homepage              | 🟢    | dashboard dichiarativa (YAML in Git) dei servizi |
-| S12    | Cloudflare Tunnel     | 🟡    | cloudflared 2 repliche in k3s, token cifrato via **SealedSecret** (GitOps, no Ansible), public hostnames `*.paroparo.it` (uptime, argocd). Tunnel Healthy (4 connessioni registrate); accesso esterno da verificare. Doc: [10-cloudflare-tunnel.md](10-cloudflare-tunnel.md) |
+| S12    | Cloudflare Tunnel     | 🟢    | cloudflared 2 repliche in k3s, token cifrato via **SealedSecret** (GitOps, no Ansible), public hostnames `*.paroparo.it` (uptime, argocd). Tunnel Healthy (4 connessioni registrate); accesso esterno verificato da 4G. Doc: [10-cloudflare-tunnel.md](10-cloudflare-tunnel.md) — verificato 2026-06-21 |
 | S12b   | Cloudflare Zero Trust | 🔴    | Valuta i 3 pilastri (Access / Gateway / WARP) e implementa **Access (ZTNA)**: login davanti ai public hostname del tunnel, a partire da ArgoCD. È la v2 di S12. Free plan (≤50 utenti) → €0. Dipende da S12 |
 
 ℹ️ **Persistenza**: i servizi con stato (Prometheus, Grafana, Loki, ArgoCD) usano il
