@@ -31,7 +31,7 @@ Terraform, configurazione in Ansible, applicazioni in Kubernetes via GitOps.
                     ├─ Traefik        (ingress)
                     ├─ cert-manager   (TLS ← Let's Encrypt via DNS-01 Cloudflare)
                     ├─ ArgoCD         (app-of-apps)
-                    ├─ Sealed Secrets (secret cifrati in Git)
+                    ├─ SOPS + age     (secret cifrati in Git)
                     └─ app (Fasi 2-4)
 ```
 
@@ -67,7 +67,7 @@ kubectl get nodes
 
 Costruzione in 4 fasi (dettaglio e Definition of Done in [docs/roadmap.md](docs/roadmap.md)):
 
-1. **Backbone** — Pi-hole, k3s, cert-manager (Let's Encrypt), ArgoCD, Sealed Secrets, backup/DR
+1. **Backbone** — Pi-hole, k3s, cert-manager (Let's Encrypt), ArgoCD, SOPS+age (secrets), backup/DR
 2. **Accesso & osservabilità** — Prometheus+Grafana, host monitoring, Loki, Uptime Kuma, Homepage, Cloudflare Tunnel
 3. **App tue** — deploy di applicazioni proprie sul cluster
 4. **Media** — storage, Jellyfin, download stack, Jellyseerr

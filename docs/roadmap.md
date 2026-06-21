@@ -35,7 +35,7 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | S2     | k3s            | VM `iss`       | 🟢    | ST         |
 | S3     | cert-manager   | k3s            | 🟢    | S1, S2     |
 | S4     | ArgoCD         | k3s            | 🟢    | S2         |
-| S5     | Secrets mgmt   | k3s            | 🟢    | S4         |
+| S5     | Secrets mgmt   | k3s            | 🟡    | S4         |
 | S6     | Backup / DR    | houston + k3s  | 🟢    | S2         |
 
 **S0 — Pi-hole** · doc: [03-pihole.md](03-pihole.md)
@@ -75,11 +75,17 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 - DoD: ArgoCD UI raggiungibile via Ingress TLS; l'`ApplicationSet` genera e
   sincronizza le app dal repo.
 
-**S5 — Secrets management: Sealed Secrets**
-- Controller Sealed Secrets installato via ArgoCD; i `SealedSecret` cifrati si
-  committano in Git, il controller li decifra dentro il cluster.
-- DoD: un secret di test, cifrato e committato in Git, viene materializzato come
-  `Secret` nel cluster; nessuna credenziale in chiaro nel repo.
+**S5 — Secrets management: SOPS + age** · doc: [11-secrets-sops.md](11-secrets-sops.md)
+- I Secret si cifrano con **SOPS + age** e si committano in Git; ArgoCD li decifra
+  al sync via plugin **KSOPS** (CMP sidecar sul `argocd-repo-server`). La chiave
+  `age` privata è l'unico segreto fuori banda (Secret nel namespace `argocd`,
+  applicato una volta sola).
+- Sostituisce **Sealed Secrets** (installato ma mai usato — rimosso in questo sprint).
+- Coperti: `cloudflare-api-token` (cert-manager) e `cloudflared-credentials`
+  (TUNNEL_TOKEN), oggi applicati fuori banda → diventano GitOps.
+- DoD: un Secret cifrato e committato viene materializzato da ArgoCD nel cluster
+  senza intervento manuale; nessuna credenziale in chiaro nel repo; controller
+  Sealed Secrets disinstallato e file rimossi; chiave `age` nel piano di backup (S6).
 
 **S6 — Backup / disaster recovery**
 - Backup dello stato di k3s e dei volumi dati persistenti (su `sata-backup`);

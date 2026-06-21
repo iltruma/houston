@@ -7,10 +7,13 @@
 | ISS    | VM   | 100        | Root disk k3s: etcd, token, `/var/lib/rancher/k3s/` |
 | sentinel | LXC | 200       | Root disk Pi-hole: `pihole.toml`, adlist, gravity DB |
 
-> **Nota GitOps**: i manifesti Kubernetes, i SealedSecret cifrati e tutta la config
-> ArgoCD sono in Git. In caso di perdita totale del cluster si può ricostruire
-> quasi tutto con `ansible-playbook` + ArgoCD sync. Il backup vzdump è il livello
-> aggiuntivo che evita il rebuild completo.
+> **Nota GitOps**: i manifesti Kubernetes, i Secret cifrati con SOPS+age e tutta
+> la config ArgoCD sono in Git. In caso di perdita totale del cluster si può
+> ricostruire quasi tutto con `ansible-playbook` + ArgoCD sync. Il backup vzdump è
+> il livello aggiuntivo che evita il rebuild completo.
+>
+> ⚠️ **Chiave `age`**: la chiave privata SOPS (S5) NON è in Git. Va custodita e
+> inclusa nel backup: senza, i Secret cifrati nel repo sono indecifrabili.
 >
 > I certificati TLS **non** sono critici: cert-manager li riemette da Let's Encrypt.
 
