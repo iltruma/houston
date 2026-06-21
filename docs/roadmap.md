@@ -137,6 +137,17 @@ accesso.
 | **Gateway** (SWG) | filtering DNS/HTTP in uscita | 🔶 valutare — si sovrappone a Pi-hole, non implementare ora |
 | **WARP** (client VPN) | accesso privato senza esporre il servizio su Internet | 🔶 valutare — alternativa al tunnel pubblico, opzionale |
 
+> **Access non è un IdP, ed è SSO solo "davanti" alle app.** Va distinto:
+> - **SSO tra le app dietro Access** ✅: un solo login all'edge → sessione valida
+>   per tutti i public hostname protetti (argocd, uptime, future app). È lo scope
+>   minimo di S12b.
+> - **SSO *dentro* l'app** (saltare la login di ArgoCD) 🔶: Access di default è un
+>   **cancello davanti**, non sostituisce la login del servizio. Per integrarlo
+>   servirebbe far fidare ArgoCD degli header JWT iniettati da Access o usare
+>   Access come provider OIDC/SAML. Opzione successiva, fuori dallo scope minimo.
+> - **Identità**: Access non gestisce le identità, si appoggia a un **IdP esterno**
+>   (Google/GitHub/Microsoft) o al suo **email OTP** integrato (unico IdP nativo).
+
 **Fase 2 — Implementazione (Access)**:
 - Definire una **Access application** self-hosted sul public hostname di ArgoCD
   (`argocd.paroparo.it`) e una **policy** che ammette solo la tua identità
