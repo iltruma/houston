@@ -111,6 +111,7 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | S10    | Uptime Kuma           | 🟢    | Status page + monitor (HTTP/TCP/DNS/ping). `uptime.lab.paroparo.it`, raw manifest in `k8s/apps/uptime-kuma/`, ArgoCD GitOps. Doc: [09-uptime-kuma.md](09-uptime-kuma.md) — verificato 2026-06-20 |
 | S11    | Homepage              | 🟢    | dashboard dichiarativa (YAML in Git) dei servizi |
 | S12    | Cloudflare Tunnel     | 🟡    | cloudflared 2 repliche in k3s, token cifrato via **SealedSecret** (GitOps, no Ansible), public hostnames `*.paroparo.it` (uptime, argocd). Tunnel Healthy (4 connessioni registrate); accesso esterno da verificare. Doc: [10-cloudflare-tunnel.md](10-cloudflare-tunnel.md) |
+| S12b   | Cloudflare Zero Trust | 🔴    | Valuta i 3 pilastri (Access / Gateway / WARP) e implementa **Access (ZTNA)**: login davanti ai public hostname del tunnel, a partire da ArgoCD. È la v2 di S12. Free plan (≤50 utenti) → €0. Dipende da S12 |
 
 ℹ️ **Persistenza**: i servizi con stato (Prometheus, Grafana, Loki, ArgoCD) usano il
 provisioner `local-path` di k3s puntato sull'NVMe (`/mnt/k3s-data`). Il SATA SSD
@@ -120,6 +121,39 @@ layout completo dei due dischi.
 ⚠️ **Cloudflare Tunnel** espone verso l'esterno solo i servizi scelti; gira come
 `cloudflared` nel cluster. Usiamo già `paroparo.it` su Cloudflare con certificati
 Let's Encrypt, quindi i servizi pubblicati sono già su un dominio pubblico valido.
+
+### S12b — Cloudflare Zero Trust (ZTNA davanti al tunnel)
+
+**Problema che risolve**: oggi (S12) chi conosce l'URL pubblico entra senza
+autenticazione. ArgoCD e le future app sono esposti "in chiaro". Zero Trust
+mette un livello di **identità** davanti al tunnel: nessuna sessione, nessun
+accesso.
+
+**Fase 1 — Valutazione** (i 3 pilastri di Cloudflare Zero Trust / Cloudflare One):
+
+| Pilastro | Cosa fa | Decisione per l'homelab |
+|---|---|---|
+| **Access** (ZTNA) | login identity-based davanti a un'app self-hosted | ✅ **implementare** — è il punto |
+| **Gateway** (SWG) | filtering DNS/HTTP in uscita | 🔶 valutare — si sovrappone a Pi-hole, non implementare ora |
+| **WARP** (client VPN) | accesso privato senza esporre il servizio su Internet | 🔶 valutare — alternativa al tunnel pubblico, opzionale |
+
+**Fase 2 — Implementazione (Access)**:
+- Definire una **Access application** self-hosted sul public hostname di ArgoCD
+  (`argocd.paroparo.it`) e una **policy** che ammette solo la tua identità
+  (email OTP come baseline, oppure Google/GitHub come IdP).
+- Decidere se gestire app/policy **a mano** in dashboard (come i CNAME di S12)
+  o via Terraform provider `cloudflare` (coerente con l'approccio IaC del repo —
+  da valutare nello sprint).
+- Resta sul **Free plan** (≤ 50 utenti): copre ZTNA completo, costo €0.
+  Limiti: log retention 24h, max 3 location.
+
+**Dipende da**: S12 (tunnel `homelab` Healthy con public hostname attivi).
+
+**DoD**:
+- `argocd.paroparo.it` da rete esterna mostra la **login page di Cloudflare
+  Access** prima del servizio; senza identità valida → accesso negato.
+- Almeno una policy testata (login consentito con la tua email, negato per altre).
+- Doc dedicato `11-cloudflare-access.md` con i passi riproducibili.
 
 ---
 
