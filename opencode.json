@@ -1,0 +1,32 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "watcher": {
+    "ignore": [
+      ".terraform/",
+      "*.tfstate",
+      "*.tfstate.backup",
+      "*.tfplan",
+      "node_modules/",
+      "certs/live/",
+      "certs/archive/",
+      "ansible/group_vars/*/vault.yml",
+      "ansible/host_vars/*/vault.yml",
+      ".vault-password",
+      ".vault-password-client",
+      "packer/builds/",
+      "**/secrets/**",
+      "**/.git/**"
+    ]
+  },
+  "instructions": [
+    "docs/roadmap.md"
+  ],
+  "permission": {
+    "question": "allow"
+  },
+  "agent": {
+    "plan": {
+      "temperature": 0.1
+    }
+  }
+}
