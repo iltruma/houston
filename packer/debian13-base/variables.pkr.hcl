@@ -39,8 +39,4 @@ variable "ssh_private_key_file" {
   description = "Chiave privata corrispondente alla pubblica usata in upload-cloud-image.sh"
 }
 
-variable "storage_pool" {
-  type        = string
-  default     = "nvme"
-  description = "Pool storage Proxmox per i dischi della VM di build"
-}
+

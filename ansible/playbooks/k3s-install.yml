@@ -106,7 +106,21 @@
           --set operator.replicas=1
           --set ipam.mode=kubernetes
       when: cilium_status.rc != 0
-      changed_when: cilium_status.rc != 0
+      changed_when: true
+      environment:
+        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
+
+    - name: Upgrade Cilium via Helm
+      ansible.builtin.command:
+        cmd: >
+          helm upgrade cilium cilium
+          --repo https://helm.cilium.io
+          --version {{ cilium_version }}
+          --namespace kube-system
+          --set operator.replicas=1
+          --set ipam.mode=kubernetes
+      when: cilium_status.rc == 0
+      changed_when: false
       environment:
         KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 

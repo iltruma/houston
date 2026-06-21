@@ -8,6 +8,8 @@ spec:
   tls:
   - hosts:
     - argocd.lab.paroparo.it
+    # Secret name not set: Traefik uses the default wildcard secret
+    # (wildcard-lab-paroparo-it-tls) from kube-system for *.lab.paroparo.it.
   rules:
   - host: argocd.lab.paroparo.it
     http:

@@ -13,14 +13,28 @@ spec:
       labels:
         app: homepage
     spec:
+      automountServiceAccountToken: false
       containers:
         - name: homepage
           image: ghcr.io/gethomepage/homepage:v1.13.2
           ports:
-            - containerPort: 3000
+            - name: http
+              containerPort: 3000
           env:
             - name: HOMEPAGE_ALLOWED_HOSTS
               value: homepage.lab.paroparo.it
+          livenessProbe:
+            httpGet:
+              path: /api/healthcheck
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /api/healthcheck
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
           volumeMounts:
             - name: config
               mountPath: /app/config/settings.yaml
@@ -34,6 +48,8 @@ spec:
             - name: config
               mountPath: /app/config/bookmarks.yaml
               subPath: bookmarks.yaml
+            - name: logs
+              mountPath: /app/config/logs
           resources:
             requests:
               cpu: 50m
@@ -41,11 +57,23 @@ spec:
             limits:
               memory: 256Mi
           securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
             allowPrivilegeEscalation: false
             capabilities:
               drop:
                 - ALL
+            seccompProfile:
+              type: RuntimeDefault
       volumes:
         - name: config
           configMap:
             name: homepage-config
+        - name: logs
+          emptyDir: {}
+      securityContext:
+        fsGroup: 1000
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault

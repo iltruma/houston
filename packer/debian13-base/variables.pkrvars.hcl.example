@@ -13,4 +13,4 @@ target_vm_id         = 9001
 # La chiave pubblica corrispondente deve essere stata passata a upload-cloud-image.sh
 ssh_private_key_file = "~/.ssh/id_ed25519"
 
-storage_pool         = "nvme"
+
