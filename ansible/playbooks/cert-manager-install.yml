@@ -1,4 +1,4 @@
-- name: Install cert-manager
+- name: Install/upgrade cert-manager
   hosts: iss
   become: true
 
@@ -9,6 +9,8 @@
         dest: /tmp/cert-manager-values.yaml
         mode: '0644'
 
+    # helm repo add è idempotente: se il repo esiste già con la stessa URL
+    # stampa "already exists" su stdout e restituisce exit 0 senza modificare nulla.
     - name: Add Jetstack Helm repo
       ansible.builtin.command: helm repo add jetstack https://charts.jetstack.io
       register: repo_add
@@ -22,24 +24,20 @@
       environment:
         KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
-    - name: Check if cert-manager is already installed
-      ansible.builtin.command: helm status cert-manager -n cert-manager
-      register: certmanager_status
-      failed_when: false
-      changed_when: false
-      environment:
-        KUBECONFIG: /etc/rancher/k3s/k3s.yaml
-
-    - name: Install cert-manager via Helm
+    # upgrade --install: idempotente. Fa l'install al primo run e l'upgrade
+    # a ogni run successivo, applicando i valori e la versione pinnata. Stesso
+    # pattern di argocd-install.yml: rilanciare il playbook con un nuovo
+    # cert_manager_chart_version aggiorna il release in-place.
+    - name: Install/upgrade cert-manager via Helm
       ansible.builtin.command:
         cmd: >
-          helm install cert-manager jetstack/cert-manager
+          helm upgrade --install cert-manager jetstack/cert-manager
           --namespace cert-manager
           --create-namespace
           --version {{ cert_manager_chart_version }}
           --values /tmp/cert-manager-values.yaml
-      when: certmanager_status.rc != 0
-      changed_when: certmanager_status.rc != 0
+      register: certmanager_helm
+      changed_when: "'has been upgraded' in certmanager_helm.stdout or 'has been installed' in certmanager_helm.stdout"
       environment:
         KUBECONFIG: /etc/rancher/k3s/k3s.yaml
 
