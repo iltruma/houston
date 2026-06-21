@@ -29,9 +29,11 @@ committano.
 - I manifest (Namespace, Deployment, ConfigMap) sono in `k8s/apps/cloudflared/`
   e gestiti da ArgoCD. Il **ConfigMap** `configmap.yaml` (ingress rules) si
   edita a mano e si committa.
-- Il **Secret** `cloudflared-credentials` contiene il `TUNNEL_TOKEN`. NON è
-  in Git: viene applicato dal playbook leggendo `cloudflared_tunnel_token` dal
-  vault (stesso pattern di argocd/grafana). È l'unica cosa che fa il playbook.
+- Il **Secret** `cloudflared-credentials` contiene il `TUNNEL_TOKEN`. È in Git
+  cifrato come **SealedSecret** (`cloudflared-credentials-sealedsecret.yaml`):
+  ArgoCD lo applica e il controller Sealed Secrets lo decifra in-cluster nel
+  Secret montato dal pod. Il playbook Ansible non applica più nulla: fa solo
+  da smoke test del rollout.
 
 ## Architettura
 
@@ -54,14 +56,14 @@ committano.
 
 ```
 k8s/apps/cloudflared/
-  ├─ namespace.yaml        # Namespace "cloudflared"
-  ├─ configmap.yaml        # ingress rules (scritto a mano, GitOps)
-  ├─ deployment.yaml       # 2 repliche, readOnlyRootFilesystem
+  ├─ namespace.yaml                            # Namespace "cloudflared"
+  ├─ configmap.yaml                            # ingress rules (scritto a mano, GitOps)
+  ├─ cloudflared-credentials-sealedsecret.yaml # TUNNEL_TOKEN cifrato (GitOps)
+  ├─ deployment.yaml                           # 2 repliche, readOnlyRootFilesystem
   └─ kustomization.yaml
 
 ansible/
-  ├─ group_vars/all/vault.yml          # cloudflared_tunnel_token (cifrato)
-  └─ playbooks/cloudflared-install.yml # applica solo il Secret
+  └─ playbooks/cloudflared-install.yml # solo smoke test del rollout (nessun secret)
 ```
 
 ## Decisioni tecniche
@@ -114,35 +116,42 @@ ansible/
 > **Nota**: i CNAME DNS si creano manualmente nella dashboard. Le ingress rules
 > stanno in `k8s/apps/cloudflared/configmap.yaml` (scritto a mano, GitOps).
 
-### 2. Aggiungere il token al vault Ansible
+### 2. Sigillare il token in un SealedSecret
+
+Il `TUNNEL_TOKEN` non va mai in chiaro nel repo: lo si cifra con `kubeseal`
+(chiave pubblica del controller Sealed Secrets) e si committa solo il blob
+cifrato. Il plaintext non tocca né cluster né disco (`--dry-run=client` + pipe):
 
 ```bash
-ansible-vault edit ansible/group_vars/all/vault.yml
+export KUBECONFIG=~/.kube/config-k3s
+read -rs CF_TUNNEL_TOKEN          # incolla il JWT eyJhIjoi..., Invio (non mostrato)
+kubectl create secret generic cloudflared-credentials \
+  --namespace cloudflared \
+  --from-literal=token="$CF_TUNNEL_TOKEN" \
+  --dry-run=client -o yaml \
+| kubeseal --controller-namespace kube-system \
+    --controller-name sealed-secrets-controller \
+    --format yaml \
+> k8s/apps/cloudflared/cloudflared-credentials-sealedsecret.yaml
+unset CF_TUNNEL_TOKEN
 ```
 
-Aggiungi la riga:
+Verifica che il file contenga `encryptedData` (e **non** `data:`) prima di committare.
 
-```yaml
-cloudflared_tunnel_token: "eyJhIjoi...IL_TOKEN..."
+### 3. Commit + push (ArgoCD applica tutto)
+
+```bash
+git add k8s/apps/cloudflared/ && git commit -m "feat(k8s): seal cloudflared tunnel token" && git push
 ```
 
-(genera la password del vault con `openssl rand -base64 32` se non ce l'hai
-e salvala in `~/.vault_pass`)
-
-### 3. Lanciare il playbook (applica il Secret)
+ArgoCD applica Namespace, ConfigMap, SealedSecret e Deployment; il controller
+decifra il SealedSecret nel Secret `cloudflared-credentials`. Opzionale, come
+smoke test del rollout:
 
 ```bash
 cd ansible
 ansible-playbook -i inventory.yml playbooks/cloudflared-install.yml
 ```
-
-Il playbook:
-1. Aspetta che ArgoCD abbia creato il namespace `cloudflared`
-2. Applica il Secret `cloudflared-credentials` con il `TUNNEL_TOKEN` dal vault
-3. Aspetta che il rollout del Deployment completi (smoke test)
-
-Namespace, ConfigMap e Deployment li applica ArgoCD da Git: assicurati di aver
-fatto commit + push dei manifest in `k8s/apps/cloudflared/` prima di lanciare.
 
 ### 4. Verifica da esterno
 
@@ -164,13 +173,14 @@ Nella dashboard Cloudflare (Zero Trust → Tunnels → homelab):
 3. `git add` → `git commit` → `git push`: ArgoCD applica il ConfigMap e
    i pod ricaricano la config (rolling update)
 
-Il playbook va rilanciato solo se cambia il token nel vault.
+Se cambia il token, ri-sigillalo (passo 2) e committa il nuovo SealedSecret:
+ArgoCD lo sincronizza e il controller aggiorna il Secret.
 
 ## Definition of Done
 
 - [x] 4 file in `k8s/apps/cloudflared/` committati
-- [x] Playbook Ansible committato
-- [x] Token in vault Ansible
+- [x] Playbook Ansible committato (smoke test)
+- [x] Token cifrato come SealedSecret in Git
 - [x] Pod `cloudflared` 2/2 Running
 - [x] `/ready` endpoint OK (tunnel connesso)
 - [x] Dashboard Cloudflare: tunnel `homelab` Healthy

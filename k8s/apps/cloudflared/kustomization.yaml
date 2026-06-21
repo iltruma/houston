@@ -6,4 +6,5 @@ namespace: cloudflared
 resources:
   - namespace.yaml
   - configmap.yaml
+  - cloudflared-credentials-sealedsecret.yaml
   - deployment.yaml

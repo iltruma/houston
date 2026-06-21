@@ -8,4 +8,4 @@ resources:
   - clusterissuer-staging.yaml
   - clusterissuer-production.yaml
   - wildcard-certificate.yaml
-  # - cloudflare-api-token-sealedsecret.yaml  # da aggiungere in S5
+  - cloudflare-api-token-sealedsecret.yaml

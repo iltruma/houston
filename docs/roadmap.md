@@ -78,8 +78,9 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 **S5 — Secrets management: Sealed Secrets**
 - Controller Sealed Secrets installato via ArgoCD; i `SealedSecret` cifrati si
   committano in Git, il controller li decifra dentro il cluster.
-- DoD: un secret di test, cifrato e committato in Git, viene materializzato come
-  `Secret` nel cluster; nessuna credenziale in chiaro nel repo.
+- DoD: i token Cloudflare (API token cert-manager + tunnel token cloudflared)
+  cifrati come `SealedSecret` e committati in Git vengono materializzati come
+  `Secret` dal controller; nessuna credenziale in chiaro nel repo.
 
 **S6 — Backup / disaster recovery**
 - Backup dello stato di k3s e dei volumi dati persistenti (su `sata-backup`);
