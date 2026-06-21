@@ -110,7 +110,7 @@ L'ossatura del homelab. Va completata in ordine perché ogni pezzo sblocca i suc
 | S9     | Loki                  | 🔴    | log aggregation, datasource in Grafana — **HOLD** |
 | S10    | Uptime Kuma           | 🟢    | Status page + monitor (HTTP/TCP/DNS/ping). `uptime.lab.paroparo.it`, raw manifest in `k8s/apps/uptime-kuma/`, ArgoCD GitOps. Doc: [09-uptime-kuma.md](09-uptime-kuma.md) — verificato 2026-06-20 |
 | S11    | Homepage              | 🟢    | dashboard dichiarativa (YAML in Git) dei servizi |
-| S12    | Cloudflare Tunnel     | 🟡    | cloudflared 2 repliche in k3s, token in Ansible vault, public hostnames `*.paroparo.it` (uptime, argocd). Da verificare: tunnel Healthy + accesso esterno. Doc: [10-cloudflare-tunnel.md](10-cloudflare-tunnel.md) |
+| S12    | Cloudflare Tunnel     | 🟡    | cloudflared 2 repliche in k3s, token cifrato via **SealedSecret** (GitOps, no Ansible), public hostnames `*.paroparo.it` (uptime, argocd). Tunnel Healthy (4 connessioni registrate); accesso esterno da verificare. Doc: [10-cloudflare-tunnel.md](10-cloudflare-tunnel.md) |
 
 ℹ️ **Persistenza**: i servizi con stato (Prometheus, Grafana, Loki, ArgoCD) usano il
 provisioner `local-path` di k3s puntato sull'NVMe (`/mnt/k3s-data`). Il SATA SSD
