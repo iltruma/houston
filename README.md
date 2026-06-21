@@ -10,10 +10,6 @@ Pi-hole.
 > fa. Il piano completo è in **[docs/roadmap.md](docs/roadmap.md)**.
 
 [![CI](https://github.com/iltruma/houston/actions/workflows/ci.yml/badge.svg)](https://github.com/iltruma/houston/actions/workflows/ci.yml)
-[![terraform](https://github.com/iltruma/houston/actions/workflows/ci.yml/badge.svg?job=terraform)](https://github.com/iltruma/houston/actions/workflows/ci.yml)
-[![ansible-lint](https://github.com/iltruma/houston/actions/workflows/ci.yml/badge.svg?job=ansible-lint)](https://github.com/iltruma/houston/actions/workflows/ci.yml)
-[![kubeconform](https://github.com/iltruma/houston/actions/workflows/ci.yml/badge.svg?job=kubeconform)](https://github.com/iltruma/houston/actions/workflows/ci.yml)
-[![gitleaks](https://github.com/iltruma/houston/actions/workflows/ci.yml/badge.svg?job=gitleaks)](https://github.com/iltruma/houston/actions/workflows/ci.yml)
 
 ---
 
