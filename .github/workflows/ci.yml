@@ -28,7 +28,7 @@ jobs:
       - name: flake check
         run: nix flake check --all-systems
       - name: nixosConfigurations eval
-        run: nix eval .#nixosConfigurations.houston.config.system.build.toplevel.drvPath --raw
+        run: nix eval .#nixosConfigurations.eos.config.system.build.toplevel.drvPath --raw
 
   kubeconform:
     name: kubeconform (k8s manifests)

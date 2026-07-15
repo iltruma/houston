@@ -1,4 +1,4 @@
-# hosts/houston/hardware.nix
+# hosts/eos/hardware.nix
 #
 # Configurazione hardware-specific per Dell Optiplex 3050.
 #

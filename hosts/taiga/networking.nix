@@ -4,7 +4,7 @@
 #
 # IP statico: 192.168.178.43 (attuale su MainsailOS, mantenuto per coerenza)
 # Gateway: 192.168.178.1 (Fritz!Box iris)
-# DNS: 192.168.178.2 (Technitium su houston)
+# DNS: 192.168.178.2 (Technitium su eos)
 
 { ... }:
 
@@ -21,7 +21,7 @@
     ];
     defaultGateway = "192.168.178.1";
     nameservers = [
-      "192.168.178.2"  # Technitium houston
+      "192.168.178.2"  # Technitium eos
       "1.1.1.1"        # fallback
     ];
 
@@ -30,7 +30,8 @@
       enable = true;
       allowedTCPPorts = [
         22    # SSH
-        80    # Mainsail web UI (nginx)
+        80    # HTTP (redirect → HTTPS)
+        443   # HTTPS Mainsail (TLS Let's Encrypt)
         7125  # Moonraker API
       ];
     };

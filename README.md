@@ -1,4 +1,4 @@
-# Houston
+# Astra
 
 **Homelab as Code** su un singolo Dell Optiplex 3050 (i5-6500T, 16 GB RAM pianificato 32 GB, 500 GB SSD)
 con **NixOS baremetal** (no hypervisor). Tutto dichiarativo: OS e servizi in
@@ -8,7 +8,7 @@ via Let's Encrypt (DNS-01 Cloudflare), DNS interno via Technitium.
 > Progetto anche **didattico**: si costruisce un pezzo alla volta, capendo cosa
 > fa. Il piano completo è in **[docs/roadmap.md](docs/roadmap.md)**.
 
-[![CI](https://github.com/iltruma/houston/actions/workflows/ci.yml/badge.svg)](https://github.com/iltruma/houston/actions/workflows/ci.yml)
+[![CI](https://github.com/iltruma/astra/actions/workflows/ci.yml/badge.svg)](https://github.com/iltruma/astra/actions/workflows/ci.yml)
 
 > ⚠️ **Migrazione completata**: il repo gira su NixOS baremetal. Stack:
 > flake NixOS per OS/servizi host, k3s come servizio, Flux per GitOps k8s.
@@ -52,7 +52,7 @@ L'indice completo dei doc è in **[docs/README.md](docs/README.md)**.
 ```
                    rete 192.168.178.0/24
   iris     .1  ─  Router Fritz!Box         (gateway)
-  houston  .2  ─  NixOS baremetal
+  eos  .2  ─  NixOS baremetal
                   ├─ Technitium DNS         (servizio NixOS, porta 53)
                   ├─ k3s                    (servizio NixOS, porta 6443)
                    │   ├─ Traefik            (ingress 80/443, hostNetwork)
@@ -78,7 +78,7 @@ Per il setup completo dei servizi k3s vedi
 - Workstation Linux/Mac/WSL con: `nix` (flakes abilitati), `git`, `ssh` (chiave ed25519)
 
 Per il partizionamento ZFS, dataset, layout storage e motivazioni vedi
-[`hosts/houston/disko.nix`](hosts/houston/disko.nix) e
+[`hosts/eos/disko.nix`](hosts/eos/disko.nix) e
 [`docs/02-storage.md`](docs/02-storage.md).
 
 ---
@@ -86,11 +86,11 @@ Per il partizionamento ZFS, dataset, layout storage e motivazioni vedi
 ## Repository layout
 
 ```
-houston/
+astra/
 ├── flake.nix                    Entry point NixOS (pin nixpkgs, sops-nix, disko)
 ├── flake.lock                   ← tracciato (pin inputs)
 ├── hosts/
-│   └── houston/                 Config specifica del server Dell Optiplex 3050
+│   └── eos/                 Config specifica del server Dell Optiplex 3050
 │       ├── default.nix          hostName, locale, nix settings, aggrega tutto
 │       ├── hardware.nix         ZFS, kernel modules, bootloader, hostId
 │       ├── networking.nix       bridge br0, firewall, IP statico
@@ -164,18 +164,18 @@ sops --encrypt --in-place secrets/rclone-env.enc.yaml
 
 # 2. Genera hostId univoco per ZFS
 head -c4 /dev/urandom | od -A none -t x4
-# Aggiorna il valore in hosts/houston/hardware.nix → networking.hostId
+# Aggiorna il valore in hosts/eos/hardware.nix → networking.hostId
 
 # 3. Valida il flake
 nix flake check
 
 # 4. Installa NixOS (da USB minimal, vedi docs/00-nixos-installation.md)
-nix run github:nix-community/disko -- --mode disko hosts/houston/disko.nix
-nixos-install --flake .#houston
+nix run github:nix-community/disko -- --mode disko hosts/eos/disko.nix
+nixos-install --flake .#eos
 reboot
 
 # 5. Applica update da remoto (da workstation)
-nixos-rebuild switch --flake .#houston --target-host root@192.168.178.2
+nixos-rebuild switch --flake .#eos --target-host root@192.168.178.2
 
 # 6. Kubernetes
 ssh root@192.168.178.2
@@ -253,13 +253,13 @@ Le versioni sono in:
 - `k8s/infra/*/helmrelease.yaml` (Helm chart version)
 
 Bump intenzionale, test in staging, commit atomico. Vedi anche
-[.renovaterc.json](.renovaterc.json) per aggiornamenti automatici (D16, proposto).
+[.renovaterc.json](.renovaterc.json) per aggiornamenti automatici (D12, proposto).
 
 ---
 
 ## Troubleshooting
 
-- **k3s non raggiungibile**: `ssh root@houston 'k3s kubectl get nodes'`
+- **k3s non raggiungibile**: `ssh root@eos 'k3s kubectl get nodes'`
 - **Cert non emesso**: `k3s kubectl describe certificate -A` e
   `k3s kubectl describe challenge -A` (DNS-01 deve creare TXT su Cloudflare)
 - **Flux non sincronizza**: `k3s flux get kustomizations` e

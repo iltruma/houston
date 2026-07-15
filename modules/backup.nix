@@ -14,13 +14,13 @@
 #   - /persist/sops                   (chiavi, gestite a parte)
 #
 # Configurazione richiesta:
-#   1. Crea bucket R2 "houston-backup" su Cloudflare dashboard
+#   1. Crea bucket R2 "eos-backup" su Cloudflare dashboard
 #   2. Genera API token R2 con scope sul bucket
 #   3. Cifra secrets/rclone-config.env.enc.yaml con sops (vedi sotto)
 #
 # Schedule: notturno alle 03:00.
 # Retention: gestita via lifecycle rules su Cloudflare R2 (Object Lifecycle in dashboard),
-# oppure aggiungendo un job separato: rclone delete r2:houston-backup --min-age 7d.
+# oppure aggiungendo un job separato: rclone delete r2:eos-backup --min-age 7d.
 # NON usare --max-age su rclone sync: è un filtro di trasferimento (non trasferisce file
 # sorgente più vecchi di 7d), non una retention policy. Con sync causa perdita silenziosa
 # di file non modificati di recente.
@@ -53,7 +53,7 @@
       ExecStart = pkgs.writeShellScript "rclone-backup" ''
         set -e
         R=${pkgs.rclone}/bin/rclone
-        REMOTE=r2:houston-backup
+        REMOTE=r2:eos-backup
 
         $R sync /var/lib/technitium-dns-server $REMOTE/technitium/ --log-level INFO
 

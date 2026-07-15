@@ -50,11 +50,11 @@ RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true
 ```
 
 Procedura:
-1. Crea bucket `houston-backup` su Cloudflare R2 dashboard
-2. Crea API token R2 con scope: Object Read & Write, bucket: `houston-backup`
+1. Crea bucket `eos-backup` su Cloudflare R2 dashboard
+2. Crea API token R2 con scope: Object Read & Write, bucket: `eos-backup`
 3. Popola `secrets/rclone-env.enc.yaml` con le credenziali
 4. Cifra: `sops --encrypt --in-place secrets/rclone-env.enc.yaml`
-5. `nixos-rebuild switch --flake .#houston` (il secret viene montato in
+5. `nixos-rebuild switch --flake .#eos` (il secret viene montato in
    `/run/secrets/backup/rclone-env`)
 
 ## Esecuzione backup
@@ -70,19 +70,19 @@ systemctl start rclone-backup
 journalctl -u rclone-backup -n 50
 
 # Lista file su R2
-rclone ls r2:houston-backup/
+rclone ls r2:eos-backup/
 ```
 
 ## Verifica backup
 
 ```bash
-# Da houston
+# Da eos
 journalctl -u rclone-backup --since "1 day ago"
 
 # Lista i file presenti
-rclone ls r2:houston-backup/technitium/
-rclone ls r2:houston-backup/k3s/
-rclone size r2:houston-backup/
+rclone ls r2:eos-backup/technitium/
+rclone ls r2:eos-backup/k3s/
+rclone size r2:eos-backup/
 
 # Verifica timer attivo
 systemctl list-timers rclone-backup.timer
@@ -95,12 +95,12 @@ systemctl list-timers rclone-backup.timer
 ```bash
 # Restore Technitium (zona DNS, blocklist)
 systemctl stop technitium-dns-server
-rclone sync r2:houston-backup/technitium/ /var/lib/technitium-dns-server/
+rclone sync r2:eos-backup/technitium/ /var/lib/technitium-dns-server/
 systemctl start technitium-dns-server
 
 # Restore k3s state (richiede stop k3s prima)
 systemctl stop k3s
-rclone sync r2:houston-backup/k3s/ /var/lib/rancher/k3s/
+rclone sync r2:eos-backup/k3s/ /var/lib/rancher/k3s/
 systemctl start k3s
 ```
 
@@ -112,7 +112,7 @@ i PV sono ancora lì. Se il dataset è perso, ripristinare da R2:
 ```bash
 # Restore k3s state + riavvia (i pod ripartono automaticamente)
 systemctl stop k3s
-rclone sync r2:houston-backup/k3s/ /var/lib/rancher/k3s/
+rclone sync r2:eos-backup/k3s/ /var/lib/rancher/k3s/
 systemctl start k3s
 
 # Verifica PV
@@ -120,12 +120,12 @@ k3s kubectl get pv
 k3s kubectl get pvc -A
 ```
 
-### Rebuild completo (scenario: houston perso o disco cambiato)
+### Rebuild completo (scenario: eos perso o disco cambiato)
 
 1. USB NixOS minimal + procedura in [00-nixos-installation.md](00-nixos-installation.md)
    step 4-5 (Disko + nixos-install)
 2. Cifra di nuovo i secret con sops (devi avere la chiave age backuppata!)
-3. `nixos-rebuild switch --flake .#houston` per attivare moduli (Technitium,
+3. `nixos-rebuild switch --flake .#eos` per attivare moduli (Technitium,
    k3s, backup, ecc.)
 4. Verifica: `k3s kubectl get nodes`, `k3s kubectl get pods -A`
 5. Restore dati da R2 (sezione sopra)
@@ -138,16 +138,16 @@ rclone non ha retention built-in. Per evitare crescita illimitata del bucket:
 
 ```bash
 # Elimina file più vecchi di 30 giorni (manuale, o via cron)
-rclone delete r2:houston-backup/ --min-age 30d --include "**"
+rclone delete r2:eos-backup/ --min-age 30d --include "**"
 ```
 
 Da aggiungere a un timer separato se il bucket cresce troppo. Free tier R2
-è 10 GB, sufficiente per anni di backup di Houston.
+è 10 GB, sufficiente per anni di backup di Eos.
 
 ## DR test (da fare)
 
 Pianificare almeno una volta dopo la migrazione:
-1. Distruggi e ricrea `houston` da zero seguendo questo doc
+1. Distruggi e ricrea `eos` da zero seguendo questo doc
 2. Verifica che tutti i servizi ripartino
 3. Verifica che i dati app siano integri
 4. Documenta lessons learned

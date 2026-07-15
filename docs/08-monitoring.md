@@ -23,7 +23,7 @@ Dopo il primo deploy:
 1. Accedi a `https://uptime.lab.paroparo.it`
 2. Crea utente admin
 3. Aggiungi monitor per ogni servizio:
-   - `houston.lab.paroparo.it` (HTTP, keyword check)
+   - `eos.lab.paroparo.it` (HTTP, keyword check)
    - `k3s.lab.paroparo.it` o equivalente (TCP 6443)
    - DNS check: `dig @192.168.178.2 lab.paroparo.it` (keyword: NXDOMAIN/NOERROR)
    - Servizi app: `beszel.lab.paroparo.it`, `homepage.lab.paroparo.it`, ecc.
@@ -43,7 +43,7 @@ In [`k8s/apps/beszel/`](../k8s/apps/beszel/):
 - `hub-service.yaml`
 - `hub-pvc.yaml` — DB hub
 - `hub-ingress.yaml` — `beszel.lab.paroparo.it`
-- `agent-daemonset.yaml` — agent in ogni nodo k8s (per ora solo houston)
+- `agent-daemonset.yaml` — agent in ogni nodo k8s (per ora solo eos)
 
 ### Limitazione: agent su host NixOS
 
@@ -81,7 +81,7 @@ Entrambi supportano notifiche push. Canali consigliati:
 
 [ntfy](https://ntfy.sh) è push notification self-hosted. ~10 MB RAM.
 
-1. Crea topic: `https://ntfy.sh/houston-<random-string>` (stringa random = privatezza)
+1. Crea topic: `https://ntfy.sh/eos-<random-string>` (stringa random = privatezza)
 2. Sottoscrivi dal telefono (app ntfy)
 3. Configura in Uptime Kuma e Beszel
 
@@ -105,7 +105,7 @@ curl -v https://beszel.lab.paroparo.it
 # HTTP 200, login page
 
 # Metriche raccolte
-# Da Beszel UI: dashboard con CPU, RAM, disco di houston
+# Da Beszel UI: dashboard con CPU, RAM, disco di eos
 ```
 
 ## Roadmap
@@ -113,7 +113,7 @@ curl -v https://beszel.lab.paroparo.it
 | Decisione | Stato | Note |
 |-----------|-------|------|
 | D11 — Beszel monitoring | 🟡 parziale | Hub OK, agent host NixOS da implementare |
-| D15 — Alerting ntfy | 🔴 proposto | Da configurare dopo Beszel agent host |
+| D11 — Alerting ntfy | 🔴 proposto | Da configurare dopo Beszel agent host |
 
 ## Alternative considerate (per memoria)
 

@@ -1,6 +1,6 @@
 # k8s/clusters/iss/
 #
-# Entry point Flux CD per il cluster k3s su houston (192.168.178.2).
+# Entry point Flux CD per il cluster k3s su eos (192.168.178.2).
 #
 # Struttura:
 #   flux-system/        ← generato da flux bootstrap (non committare a mano)
@@ -13,7 +13,7 @@
 # Bootstrap (una tantum, da workstation):
 #   flux bootstrap github \
 #     --owner=iltruma \
-#     --repository=houston \
+#     --repository=astra \
 #     --branch=main \
 #     --path=k8s/clusters/iss \
 #     --personal

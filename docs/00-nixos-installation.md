@@ -1,6 +1,6 @@
-# Installazione NixOS — Houston
+# Installazione NixOS — Eos
 
-Guida operativa per installare NixOS baremetal su Houston (Dell Optiplex 3050).
+Guida operativa per installare NixOS baremetal su Eos (Dell Optiplex 3050).
 
 nixos-anywhere installa NixOS via SSH su qualsiasi Linux già avviato sul target,
 usando kexec per caricare il kernel NixOS in memoria e disko per partizionare.
@@ -13,7 +13,7 @@ usando kexec per caricare il kernel NixOS in memoria e disko per partizionare.
 ## Prerequisiti
 
 - Workstation con `nix` installato e flakes abilitati
-- Houston raggiungibile via SSH come root (o utente con sudo passwordless)
+- Eos raggiungibile via SSH come root (o utente con sudo passwordless)
 - Chiave SSH della workstation autorizzata sul target
 
 ---
@@ -23,7 +23,7 @@ usando kexec per caricare il kernel NixOS in memoria e disko per partizionare.
 Solo per la prima installazione su disco vuoto. Se NixOS è già presente, salta a Step 3.
 
 1. Scarica [Debian netinst ISO](https://www.debian.org/CD/netinst/) e scrivila su USB
-2. Boot da USB su Houston (F12 → boot menu Dell)
+2. Boot da USB su Eos (F12 → boot menu Dell)
 3. Installazione Debian minimal: no desktop, no extra packages, solo `SSH server`
 4. Configura IP statico durante l'install: `192.168.178.2/24`, gateway `192.168.178.1`
 5. Abilita login root via SSH: in `/etc/ssh/sshd_config` imposta `PermitRootLogin yes`
@@ -32,7 +32,7 @@ Solo per la prima installazione su disco vuoto. Se NixOS è già presente, salta
 Verifica connettività:
 ```bash
 ssh root@192.168.178.2 uname -a
-# Linux houston ... x86_64 GNU/Linux
+# Linux eos ... x86_64 GNU/Linux
 ```
 
 Da questo punto in poi, **USB non serve più**: tutti i reinstall futuri usano nixos-anywhere via SSH.
@@ -65,26 +65,26 @@ sops --encrypt --in-place secrets/rclone-env.enc.yaml
 
 # Genera l'hostId univoco per ZFS
 head -c4 /dev/urandom | od -A none -t x4
-# Aggiorna il valore in hosts/houston/hardware.nix → networking.hostId
+# Aggiorna il valore in hosts/eos/hardware.nix → networking.hostId
 
 # Aggiungi la tua SSH pubblica in modules/common.nix:
 #   users.users.cosimo.openssh.authorizedKeys.keys = [ "ssh-ed25519 AAAA..." ];
 
 # Clona il repo sulla workstation (se non già presente)
-git clone <repo> ~/houston
-cd ~/houston
+git clone <repo> ~/astra
+cd ~/astra
 ```
 
 ## Step 3 — Esegui nixos-anywhere
 
-nixos-anywhere si connette a Houston via SSH, partiziona il disco con disko,
+nixos-anywhere si connette a Eos via SSH, partiziona il disco con disko,
 installa NixOS e riavvia. Tutto da un singolo comando sulla workstation.
 
 ⚠️ **Distruttivo**: cancella tutto su `/dev/sda`.
 
 ```bash
 nix run github:nix-community/nixos-anywhere -- \
-  --flake .#houston \
+  --flake .#eos \
   root@192.168.178.2
 ```
 
@@ -111,7 +111,7 @@ systemctl status rclone-backup.timer    # attivo, prossimo run alle 03:00
 # Verifica k3s
 k3s kubectl get nodes
 # NAME      STATUS   ROLES                  AGE     VERSION
-# houston   Ready    control-plane,master   2m      v1.30.x+k3s1
+# eos   Ready    control-plane,master   2m      v1.30.x+k3s1
 
 # Verifica CNI (Flannel bundled, pod kube-flannel)
 k3s kubectl get pods -n kube-system
@@ -174,7 +174,7 @@ Per aggiornare NixOS o un pacchetto:
 nix flake update --commit nixpkgs
 
 # Build e applica da workstation
-nixos-rebuild switch --flake .#houston --target-host root@192.168.178.2
+nixos-rebuild switch --flake .#eos --target-host root@192.168.178.2
 ```
 
 Per aggiornare altri Helm chart (traefik, cert-manager):
@@ -205,12 +205,12 @@ export RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=xxx
 export RCLONE_CONFIG_R2_ENDPOINT=https://xxx.r2.cloudflarestorage.com
 
 # Restore Technitium
-rclone sync r2:houston-backup/technitium/ /var/lib/technitium-dns-server/
+rclone sync r2:eos-backup/technitium/ /var/lib/technitium-dns-server/
 systemctl restart technitium-dns-server
 
 # Restore k3s state (richiede stop k3s prima)
 systemctl stop k3s
-rclone sync r2:houston-backup/k3s/ /var/lib/rancher/k3s/
+rclone sync r2:eos-backup/k3s/ /var/lib/rancher/k3s/
 systemctl start k3s
 ```
 
@@ -220,7 +220,7 @@ systemctl start k3s
 
 ### ZFS non si importa al boot
 
-Verifica la `hostId` in `hosts/houston/hardware.nix` (deve corrispondere
+Verifica la `hostId` in `hosts/eos/hardware.nix` (deve corrispondere
 all'ID del disco). Da live USB: `zpool import -f tank`.
 
 ### k3s non parte
@@ -264,4 +264,4 @@ ss -tlnp | grep :53
 dig @192.168.178.2 lab.paroparo.it
 ```
 
-Se il firewall blocca: aggiungi le porte in `hosts/houston/networking.nix`.
+Se il firewall blocca: aggiungi le porte in `hosts/eos/networking.nix`.

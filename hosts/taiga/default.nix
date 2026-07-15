@@ -10,7 +10,7 @@
 #     --build-host localhost
 #
 # Prerequisito (una volta sola sulla workstation):
-#   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];  # in houston config
+#   boot.binfmt.emulatedSystems = [ "aarch64-linux" ];  # in eos config
 #
 # ── da fare al primo install ────────────────────────────────────────────────
 #   1. Flash SD card con immagine NixOS aarch64 per Pi 4

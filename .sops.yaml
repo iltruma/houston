@@ -1,4 +1,4 @@
-# Configurazione SOPS per il repo houston.
+# Configurazione SOPS per il repo astra.
 #
 # Cifra i file con estensione .enc.yaml (secret k8s e host) usando la stessa
 # chiave age condivisa tra Flux (k8s/) e sops-nix (secrets/).

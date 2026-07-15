@@ -45,6 +45,17 @@ Questo abilita:
 > Per limitarla a localhost, serve un override (vedi
 > [sezione override](#override-web-ui-su-localhost) sotto).
 
+## Zone file (BIND)
+
+I record DNS sono versionati in Git come zona BIND:
+[`hosts/eos/dns-zone.lab.paroparo.it`](../hosts/eos/dns-zone.lab.paroparo.it)
+
+Per importare in Technitium dopo un reinstall:
+- *Zones → lab.paroparo.it → Import → seleziona il file*
+
+Per aggiungere un nuovo servizio: aggiungi il record nel file e reimporta,
+oppure aggiungilo dalla web UI (poi aggiorna il file nel repo per mantenerlo allineato).
+
 ## Configurazione via web UI
 
 Dopo l'install NixOS e il primo boot, Technitium va configurato via web UI.
@@ -70,6 +81,14 @@ ssh -L 5380:127.0.0.1:5380 root@192.168.178.2
    - Name: `*` (o vuoto per la root)
    - IPv4 Address: `192.168.178.2`
    - Salva
+
+3. **Record esplicito per Taiga** (necessario per ACME DNS-01):
+   - *Add Record → A*
+   - Name: `taiga`
+   - IPv4 Address: `192.168.178.43`
+   - Salva
+   - Il wildcard coprirebbe anche `taiga`, ma il record esplicito ha priorità
+      e punta al Pi direttamente invece che a Traefik su Eos.
 
 3. **Upstream ricorsivi (DoH)**:
    - *Settings → DNS Client*
@@ -137,7 +156,7 @@ nel backup rclone notturno (vedi [03-backup.md](03-backup.md)).
 Restore:
 ```bash
 systemctl stop technitium-dns-server
-rclone sync r2:houston-backup/technitium/ /var/lib/technitium-dns-server/
+rclone sync r2:eos-backup/technitium/ /var/lib/technitium-dns-server/
 systemctl start technitium-dns-server
 ```
 
@@ -154,7 +173,7 @@ aggiornare:
 
 ```bash
 nix flake update --commit nixpkgs
-nixos-rebuild switch --flake .#houston --target-host root@192.168.178.2
+nixos-rebuild switch --flake .#eos --target-host root@192.168.178.2
 ```
 
 Technitium non richiede migrazioni di state: ogni release mantiene

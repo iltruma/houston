@@ -1,7 +1,7 @@
 # Storage
 
-Layout disco e dataset ZFS su Houston. Dichiarato in
-[`hosts/houston/disko.nix`](../hosts/houston/disko.nix) e applicato da
+Layout disco e dataset ZFS su Eos. Dichiarato in
+[`hosts/eos/disko.nix`](../hosts/eos/disko.nix) e applicato da
 [Disko](https://github.com/nix-community/disko) all'install.
 
 ## Hardware
@@ -98,7 +98,7 @@ major), considera un backup completo rclone prima.
 
 ## ZFS tuning
 
-In [`hosts/houston/hardware.nix`](../hosts/houston/hardware.nix):
+In [`hosts/eos/hardware.nix`](../hosts/eos/hardware.nix):
 
 ```nix
 services.zfs.autoScrub.enable = true;  # scrub settimanale
@@ -108,7 +108,7 @@ services.zfs.trim.enable = true;       # TRIM per SSD
 ## Persistenza (vs impermanence)
 
 NixOS offre il pattern "impermanence" (`/` resettato a ogni boot, stato in
-`/persist`). Houston ha scelto di **non** usarlo: complica il rollback e il
+`/persist`). Eos ha scelto di **non** usarlo: complica il rollback e il
 supporto di k3s state, e i benefici su single-host sono marginali. Lo state
 vive normalmente sui dataset e viene backuppato con rclone.
 

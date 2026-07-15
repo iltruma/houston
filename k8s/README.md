@@ -23,7 +23,7 @@ k8s/
     ├── uptime-kuma/            Status page
     ├── beszel/                 Hub + agent monitoring
     ├── homepage/               Dashboard dichiarativa
-    ├── infra-proxy/            Traefik reverse proxy → iris (router) / houston (legacy)
+    ├── infra-proxy/            Traefik reverse proxy → iris (router) / eos (legacy)
     └── <nome>/                 Qualsiasi nuovo servizio
 ```
 
@@ -68,7 +68,7 @@ export KUBECONFIG=~/.kube/config-k3s
 # 1. Installa Flux sul cluster e lo collega al repo GitHub
 flux bootstrap github \
   --owner=<github-org> \
-  --repository=houston \
+  --repository=astra \
   --branch=main \
   --path=k8s/clusters/iss \
   --personal

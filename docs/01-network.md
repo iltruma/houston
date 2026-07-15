@@ -1,6 +1,6 @@
 # Rete
 
-Configurazione di rete per Houston. Topologia, bridge, firewall, DNS ricorsivo.
+Configurazione di rete per Astra. Topologia, bridge, firewall, DNS ricorsivo.
 
 ## Schema rete
 
@@ -12,7 +12,7 @@ Internet
 │  iris    │  192.168.178.1 (Router Fritz!Box — Gateway + DHCP per i client)
 └────┬─────┘
      │
-     ├── 192.168.178.2   houston   NixOS baremetal
+     ├── 192.168.178.2   eos   NixOS baremetal
      │                            ├─ Technitium DNS (servizio, :53)
      │                            ├─ k3s API (servizio, :6443)
      │                            └─ Traefik ingress (:80, :443)
@@ -20,13 +20,13 @@ Internet
      └── 192.168.178.x   Altri dispositivi (DHCP dal router)
 ```
 
-> **Cambiamento post-migrazione**: tutto gira sull'host `houston` (.2). Non
+> **Cambiamento post-migrazione**: tutto gira sull'host `eos` (.2). Non
 > esistono più VM/LXC con IP separati. I servizi k3s rispondono su `.2:6443`,
 > Technitium su `.2:53`, Traefik su `.2:80/443`.
 
 ## Bridge br0
 
-Configurazione in [`hosts/houston/networking.nix`](../hosts/houston/networking.nix):
+Configurazione in [`hosts/eos/networking.nix`](../hosts/eos/networking.nix):
 
 ```nix
 networking.bridges.br0.interfaces = [ "enp1s0" ];
@@ -47,16 +47,16 @@ VM, basta attaccare la loro interfaccia a `br0` e avranno IP nella LAN.
 | Host       | Ruolo                      | Tipo | IP            |
 |------------|----------------------------|------|---------------|
 | `iris`     | Router Fritz!Box (gateway) | hw   | 192.168.178.1 |
-| `houston`  | NixOS + k3s + DNS + ingress | host | 192.168.178.2 |
+| `eos`  | NixOS + k3s + DNS + ingress | host | 192.168.178.2 |
 
 I client generici prendono IP dal DHCP del router. Il Fritz!Box ha una
-reservation DHCP per `houston` basata sul MAC di `enp1s0` (opzionale, ma
+reservation DHCP per `eos` basata sul MAC di `enp1s0` (opzionale, ma
 utile se vuoi che `.2` sia sempre lui).
 
 ## Firewall
 
 Default NixOS: drop tutto tranne porte esplicite. Configurazione in
-[`hosts/houston/networking.nix`](../hosts/houston/networking.nix):
+[`hosts/eos/networking.nix`](../hosts/eos/networking.nix):
 
 ```nix
 networking.firewall = {
@@ -140,13 +140,13 @@ Corefile di default. È in `/var/lib/rancher/k3s/server/manifests/00-coredns-cus
 
 ```bash
 # Da workstation sulla LAN
-ping 192.168.178.2                       # houston risponde
+ping 192.168.178.2                       # eos risponde
 ssh root@192.168.178.2                   # SSH funziona
 dig @192.168.178.2 lab.paroparo.it       # DNS split-horizon funziona
 dig @192.168.178.2 uptime.lab.paroparo.it # wildcard → 192.168.178.2
 curl -v https://uptime.lab.paroparo.it   # Traefik + cert-manager
 
-# Da houston stesso
+# Da eos stesso
 ip link show br0                          # bridge up
 ip addr show br0                          # IP 192.168.178.2
 ss -tlnp | grep -E ':(22|53|80|443|6443)' # porte in ascolto
@@ -160,7 +160,7 @@ Schema target:
 | VLAN | Subnet | Ospita |
 |------|--------|--------|
 | 1 (native) | 192.168.178.x | Management (workstation) |
-| 10 | 10.10.0.x | Core infra (Technitium DNS, host houston) |
+| 10 | 10.10.0.x | Core infra (Technitium DNS, host eos) |
 | 20 | 10.20.0.x | Cluster k3s |
 | 30 | 10.30.0.x | Downloads (qBittorrent + VPN egress) |
 | 40 | 10.40.0.x | DMZ (Cloudflare Tunnel exit) |

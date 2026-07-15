@@ -159,12 +159,12 @@ Il namespace `infra-proxy` espone tramite Traefik host fisici che non fanno part
 
 | Hostname | Backend | Note |
 |---|---|---|
-| `houston.lab.paroparo.it` | `192.168.178.2:80` | NixOS (HTTP, vari servizi host) |
+| `eos.lab.paroparo.it` | `192.168.178.2:80` | NixOS (HTTP, vari servizi host) |
 | `iris.lab.paroparo.it` | `192.168.178.1:443` | Router Fritz!Box (HTTPS, self-signed) |
 
-> **Cambiamento post-migrazione**: Proxmox non c'è più, quindi `houston` non
+> **Cambiamento post-migrazione**: Proxmox non c'è più, quindi `eos` non
 > espone più la UI Proxmox (8006). Sentinel (Technitium) gira sullo stesso
-> host di houston, non serve proxy separato.
+> host di eos, non serve proxy separato.
 
 Ogni backend self-signed (es. Fritz!Box) usa un `ServersTransport` con
 `insecureSkipVerify: true`. Il certificato esposto al browser è sempre il

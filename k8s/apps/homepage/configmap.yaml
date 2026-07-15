@@ -5,7 +5,7 @@ metadata:
   namespace: homepage
 data:
   settings.yaml: |
-    title: Houston Homelab
+    title: Astra Homelab
     headerStyle: clean
     theme: dark
     color: slate
@@ -18,10 +18,10 @@ data:
     - Infrastructure:
         - Technitium:
             href: https://192.168.178.2:5380
-            description: DNS server (houston)
+            description: DNS server (eos)
             icon: technitium.png
         - Flux:
-            href: https://github.com/iltruma/houston
+            href: https://github.com/iltruma/astra
             description: GitOps repo
             icon: flux-cd.png
         - Beszel:
@@ -39,6 +39,6 @@ data:
 
   bookmarks.yaml: |
     - Repos:
-        - Houston:
-            - abbr: HO
-              href: https://github.com/iltruma/houston
+        - Astra:
+            - abbr: AS
+              href: https://github.com/iltruma/astra

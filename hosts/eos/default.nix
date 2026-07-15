@@ -1,13 +1,13 @@
-# hosts/houston/default.nix
+# hosts/eos/default.nix
 #
-# Configurazione principale dell'host houston (Dell Optiplex 3050).
+# Configurazione principale dell'host eos (Dell Optiplex 3050).
 # Aggrega: disko, hardware, networking + moduli riusabili da ./modules.
 #
 # Per buildare:
-#   nix build .#nixosConfigurations.houston.config.system.build.toplevel
+#   nix build .#nixosConfigurations.eos.config.system.build.toplevel
 #
 # Per applicare:
-#   nixos-rebuild switch --flake .#houston
+#   nixos-rebuild switch --flake .#eos
 # (oppure --target-host root@192.168.178.2 per buildare in remoto)
 
 { config, lib, pkgs, ... }:

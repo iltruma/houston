@@ -103,9 +103,9 @@ Se per qualche motivo Flux non parte, bootstrap manuale dalla workstation:
 
 ```bash
 # 1. Recupera kubeconfig
-ssh root@192.168.178.2 'cat /etc/rancher/k3s/k3s.yaml' > ~/.kube/config-houston
+ssh root@192.168.178.2 'cat /etc/rancher/k3s/k3s.yaml' > ~/.kube/config-eos
 # Modifica server: https://192.168.178.2:6443
-sed -i 's/127.0.0.1/192.168.178.2/' ~/.kube/config-houston
+sed -i 's/127.0.0.1/192.168.178.2/' ~/.kube/config-eos
 
 # 2. Installa Flux CLI (workstation)
 nix-shell -p fluxcd
@@ -113,7 +113,7 @@ nix-shell -p fluxcd
 # 3. Bootstrap
 flux bootstrap github \
   --owner=iltruma \
-  --repository=houston \
+  --repository=astra \
   --branch=main \
   --path=k8s/clusters/iss \
   --personal
@@ -243,7 +243,7 @@ k3s kubectl get pods -A
 # Cluster up
 k3s kubectl get nodes
 # NAME      STATUS   ROLES                  AGE   VERSION
-# houston   Ready    control-plane,master   Xm    v1.30.x+k3s1
+# eos   Ready    control-plane,master   Xm    v1.30.x+k3s1
 
 # Tutti i pod Running
 k3s kubectl get pods -A

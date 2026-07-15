@@ -1,6 +1,6 @@
-# Houston — Stack Decisioni e Motivazioni
+# Astra — Stack Decisioni e Motivazioni
 
-Documento di riferimento per le **scelte architetturali** di Houston, con motivazione,
+Documento di riferimento per le **scelte architetturali** di Astra, con motivazione,
 alternative scartate e rischio a lungo termine. Ogni decisione ha uno stato:
 - 🟢 **applicato** = in produzione
 - 🟡 **parziale** = in corso
@@ -12,156 +12,57 @@ alternative scartate e rischio a lungo termine. Ogni decisione ha uno stato:
 
 | #    | Decisione                            | Stato    | Note |
 |------|--------------------------------------|----------|------|
-| D1   | Proxmox VE → NixOS baremetal         | 🟢 applicato | Migrazione completa. vedi [00-nixos-installation.md](00-nixos-installation.md) |
-| D2   | Terraform/Ansible → flake NixOS      | 🟢 applicato | Unica fonte di verità |
-| D3   | k3s in VM → k3s come servizio host   | 🟢 applicato | Zero overhead VM |
-| D4   | ~~Cilium con kube-proxy~~            | ❌ rimosso | Vedi D9 e D17 |
-| D5   | CoreDNS bundled k3s + ConfigMap custom | 🟢 applicato | Delega split-horizon a Technitium. vedi [04-dns-technitium.md](04-dns-technitium.md) |
-| D6   | Rimuovere NVMe fisicamente           | 🟢 applicato | Single disk /dev/sda nel nuovo setup |
-| D7   | ArgoCD → Flux CD v2                  | 🟢 applicato | Native SOPS, niente plugin esterni |
-| D8   | Kubelet tuning k3s (low-RAM)         | 🟢 applicato | In `modules/k3s.nix` → `extraFlags` |
-| D9   | ~~Cilium: helmfile bootstrap + Flux handover~~ | ❌ rimosso | Vedi D17 |
-| D10  | Sealed Secrets → SOPS + age          | 🟢 applicato | Unificato host (sops-nix) + k8s (Flux SOPS) |
-| D11  | Beszel monitoring                    | 🟡 parziale | Hub in k3s, agent su host NixOS (opzionale) |
-| D12  | RAM upgrade 16 → 32 GB               | 🟡 parziale | Prerequisito hardware, non ancora fatto |
-| D13  | Pi-hole v6 → Technitium DNS          | 🟢 applicato | Modulo NixOS nativo (nixpkgs) |
-| D14  | Backup rclone → Cloudflare R2        | 🟢 applicato | systemd timer NixOS (vedi [03-backup.md](03-backup.md)) |
-| D15  | Alerting channel (ntfy)              | 🔴 proposto | Beszel + Uptime Kuma → ntfy |
-| D16  | Dependency updates (Renovate)        | 🔴 proposto | Aggiornamenti automatici Helm chart, Nix packages |
-| D17  | Cilium rimosso → Flannel (bundled)   | 🟢 applicato | Bootstrap era fragile su NixOS; Flannel sufficiente su single-node |
-| D18  | ZFS encryption rimossa               | 🟢 applicato | No threat model reale su homelab; complessità TPM2 > benefici |
+| D1   | CNI: Flannel (bundled k3s)           | 🟢 applicato | Default k3s, sufficiente su single-node |
+| D2   | CoreDNS bundled k3s + ConfigMap custom | 🟢 applicato | Delega split-horizon a Technitium |
+| D3   | Rimuovere NVMe fisicamente           | 🟢 applicato | Single disk /dev/sda |
+| D4   | ArgoCD → Flux CD v2                  | 🟢 applicato | Native SOPS, niente plugin esterni |
+| D5   | Kubelet tuning k3s (low-RAM)         | 🟢 applicato | In `modules/k3s.nix` → `extraFlags` |
+| D6   | Sealed Secrets → SOPS + age          | 🟢 applicato | Unificato host (sops-nix) + k8s (Flux SOPS) |
+| D7   | Beszel monitoring                    | 🟡 parziale | Hub in k3s, agent su host NixOS (opzionale) |
+| D8   | RAM upgrade 16 → 32 GB               | 🟡 parziale | Prerequisito hardware, non ancora fatto |
+| D9   | Pi-hole v6 → Technitium DNS          | 🟢 applicato | Modulo NixOS nativo (nixpkgs) |
+| D10  | Backup rclone → Cloudflare R2        | 🟢 applicato | systemd timer NixOS |
+| D11  | Alerting channel (ntfy)              | 🔴 proposto | Beszel + Uptime Kuma → ntfy |
+| D12  | Dependency updates (Renovate)        | 🔴 proposto | Aggiornamenti automatici Helm chart, Nix packages |
+| D13  | ZFS encryption rimossa               | 🟢 applicato | No threat model reale su homelab; complessità TPM2 > benefici |
 
 ---
 
-## D1 — Proxmox VE → NixOS baremetal
+## D1 — Flannel (bundled k3s)
 
 ### Problema
 
-Proxmox VE è un hypervisor maturo ma non dichiarativo: lo stato vive in un
-database opaco, l'unica via per ricostruirlo è cliccare nell'UI o usare la
-REST API. Anche con Terraform sopra, la divergenza tra "config in Git" e
-"stato reale" è un rischio concreto (specialmente con agenti che fanno
-modifiche imperative).
+Il bootstrap Cilium su NixOS era fragile per tre ragioni:
+1. **Chicken-and-egg**: k3s parte con Flannel disabilitato (`--flannel-backend=none`),
+   ma senza CNI l'API server non è operativo e helmfile non può eseguire.
+2. **helm-diff plugin**: il path del plugin non era standard in NixOS (store Nix),
+   richiedeva workaround con `HELM_PLUGINS` env var nel servizio systemd.
+3. **Servizio systemd custom** (`k3s-cilium-bootstrap`): un servizio one-shot
+   fragile, difficile da debuggare se falliva in silenzio.
 
-### Scelta: NixOS baremetal + flake
+### Scelta: Flannel (CNI bundled)
 
-NixOS descrive l'intero sistema in un flake versionato in Git. Ogni
-`nixos-rebuild switch` riconcilia lo stato al file Nix. Rollback atomico via
-generations. Riproducibilità totale: `git clone` + `nixos-install` = stesso
-sistema.
+k3s ha Flannel integrato di default. Non richiede bootstrap esterno, niente
+dipendenze aggiuntive, niente servizi systemd custom.
 
-| Criterio                  | Proxmox VE             | NixOS baremetal        |
-|---------------------------|------------------------|------------------------|
-| Dichiaratività            | ⚠️ UI + API REST      | ✅ flake Nix (codice) |
-| Riproducibilità           | ⚠️ Terraform wrapper   | ✅ nativa             |
-| Rollback                  | ❌                     | ✅ generations        |
-| Costo memoria hypervisor  | ~500 MB Proxmox        | 0 (è l'host stesso)   |
-| Curva di apprendimento    | 🟢 bassa              | 🔴 alta (Nix lang)    |
-| UI di gestione            | ✅ Web UI              | ❌ CLI                |
+Su single-node homelab Flannel è più che sufficiente: routing L3 tra pod,
+niente eBPF/NetworkPolicy avanzate necessarie.
 
-### Alternative scartate
+### Alternative future
 
-- **Proxmox con IaC completo** (Terraform + Ansible): funziona ma aggiunge
-  strati. Per un singolo host single-developer è over-engineering.
-- **Incus (LXD fork)** su Debian: più semplice di NixOS ma non dichiarativo.
-  Bas Nijholt lo usa, ma riconosce che NixOS è più rigoroso.
-- **microvm.nix**: VM leggere dichiarative, ma operational maturity bassa.
-  overkill per single-node.
-
-### Trade-off accettato
-
-- Nessuna UI di gestione (no Proxmox UI). `nixos-rebuild switch` da SSH.
-- Curva di apprendimento Nix ripida (~3-5 giorni per essere produttivi).
-- Single point of failure: NixOS è host + k3s + DNS. Crash = tutto giù.
-  Mitigazione: backup rclone regolari + ricostruzione da zero in 2-3 ore.
+Cilium può essere aggiunto via Flux `HelmRelease` in futuro quando il cluster
+è stabile, senza dipendere da un bootstrap pre-CNI. In quel caso il pattern
+helmfile non è necessario perché Flannel fornisce già rete funzionante durante
+l'installazione di Cilium.
 
 ### Rischio a lungo termine
 
-🟡 Medio — NixOS è stabile ma la community è più piccola di Proxmox. Per un
-homelab, gestibile.
+🟢 Basso — Flannel è il CNI di default di k3s, ampiamente testato su
+single-node.
 
 ---
 
-## D2 — Terraform/Ansible/Packer → flake NixOS
-
-### Problema
-
-Il vecchio setup usava tre tool diversi per tre concern diversi:
-- Terraform → provisioning VM/LXC su Proxmox
-- Ansible → configurazione OS guest
-- Packer → template VM Debian
-
-Tre linguaggi, tre stati, tre toolchain. Drift tra loro possibile.
-
-### Scelta: un solo flake NixOS
-
-Tutto (OS + servizi host + provisioning) in un unico flake. Niente Terraform,
-niente Ansible, niente Packer.
-
-### Vantaggi
-
-- Un solo linguaggio (Nix) per tutto
-- Un solo `nix flake check` per validare
-- Un solo `nixos-rebuild switch` per applicare
-- Niente stato esterno (no `terraform.tfstate`)
-- Niente template da mantenere (Packer sostituito da disko)
-
-### Rischio a lungo termine
-
-🟢 Basso — `flake.nix` è un file di testo, `flake.lock` è un file JSON. Git fa
-il resto.
-
----
-
-## D3 — k3s in VM Proxmox → k3s come servizio host
-
-### Problema
-
-La vecchia architettura aveva:
-- Houston (Proxmox, 192.168.178.2)
-- iss (k3s servizio NixOS, 192.168.178.2:6443)
-- sentinel (LXC Technitium, 192.168.178.4)
-
-Tre IP, tre sistemi, tre firewall. Overhead RAM significativo (~1-2 GB per la
-VM k3s e la gestione Proxmox).
-
-### Scelta: k3s come servizio NixOS sullo stesso host
-
-```
-houston (192.168.178.2) — NixOS baremetal
-├── Technitium DNS (porta 53)
-├── k3s (porta 6443)
-│   ├── Traefik (80/443, hostNetwork)
-│   ├── cert-manager
-│   ├── Flux
-│   └── app
-└── rclone timer (backup)
-```
-
-Tutto sullo stesso IP. Niente overhead VM.
-
-### Modulo NixOS
-
-`services.k3s` in nixpkgs è maturo, supporta:
-- `manifests.<name>.source` per auto-deploy manifest
-- `autoDeployCharts.<name>` per Helm chart al bootstrap
-- `extraFlags` per tutto ciò che k3s CLI accetta
-
-### Rischio a lungo termine
-
-🟢 Basso — pattern usato in produzione da [niki-on-github/nixos-k3s](https://github.com/niki-on-github/nixos-k3s),
-[rorosen/k3s-nix](https://github.com/rorosen/k3s-nix), [ces0712/nix-k3s-edge-cluster](https://github.com/ces0712/nix-k3s-edge-cluster).
-
----
-
-## D4 — ~~Cilium con kube-proxy~~ (rimosso, vedi D17)
-
-Questa decisione è stata superata da D17. Cilium non è più installato;
-il CNI è Flannel bundled (default k3s).
-
----
-
-## D5 — CoreDNS bundled + ConfigMap custom
+## D2 — CoreDNS bundled + ConfigMap custom
 
 ### Problema
 
@@ -206,7 +107,7 @@ Symlink in `systemd.tmpfiles.rules`:
 
 ---
 
-## D6 — Rimozione NVMe (single disk)
+## D3 — Rimozione NVMe (single disk)
 
 ### Problema
 
@@ -227,7 +128,7 @@ disponibile. PV k3s vivono in `tank/volumes` (ZFS dataset).
 
 ---
 
-## D7 — ArgoCD → Flux CD v2
+## D4 — ArgoCD → Flux CD v2
 
 ### Problema
 
@@ -257,7 +158,7 @@ Nessuna web UI nativa. Per debug: `flux get all`, `kubectl describe kustomizatio
 
 ---
 
-## D8 — Kubelet tuning k3s (low-RAM)
+## D5 — Kubelet tuning k3s (low-RAM)
 
 ### Problema
 
@@ -276,7 +177,7 @@ services.k3s.extraFlags = toString [
 ```
 
 > Nota: `--flannel-backend=none` e `--disable-network-policy` sono stati
-> rimossi insieme a Cilium (D17). Flannel è attivo di default.
+> rimossi insieme a Cilium (D1). Flannel è attivo di default.
 
 ### Rischio a lungo termine
 
@@ -284,15 +185,7 @@ services.k3s.extraFlags = toString [
 
 ---
 
-## D9 — ~~Cilium: helmfile bootstrap + Flux handover~~ (rimosso, vedi D17)
-
-Il bootstrap Cilium via helmfile/helm-diff è stato rimosso. `modules/k3s.nix`
-non contiene più il servizio `k3s-cilium-bootstrap`, né il `helmfile.yaml`.
-Il motivo è documentato in D17.
-
----
-
-## D10 — Sealed Secrets → SOPS + age (unificato)
+## D6 — Sealed Secrets → SOPS + age (unificato)
 
 ### Problema
 
@@ -323,7 +216,7 @@ Nel nuovo setup:
 
 ---
 
-## D11 — Beszel monitoring
+## D7 — Beszel monitoring
 
 ### Problema
 
@@ -338,7 +231,7 @@ Serve sapere CPU/RAM host, disco, container up/down.
 ### Limitazione: K8s metrics
 
 Beszel non ha supporto K8s nativo. Per metriche per Pod/Deployment come
-oggetti K8s serve altro (VictoriaMetrics o simile). Per Houston è accettabile:
+oggetti K8s serve altro (VictoriaMetrics o simile). Per Eos è accettabile:
 l'interesse è il nodo, non l'introspection dei workload.
 
 ### Stato
@@ -351,7 +244,7 @@ l'interesse è il nodo, non l'introspection dei workload.
 
 ---
 
-## D12 — RAM upgrade 16 → 32 GB
+## D8 — RAM upgrade 16 → 32 GB
 
 ### Problema
 
@@ -372,12 +265,12 @@ Prerequisito per workload Fase 4 (Jellyfin transcoding) e per buffer generale.
 
 ---
 
-## D13 — Pi-hole v6 → Technitium DNS
+## D9 — Pi-hole v6 → Technitium DNS
 
 ### Problema
 
 Pi-hole è un ad-blocker DNS, non un server DNS completo. Per il pattern
-Houston (`*.lab.paroparo.it` interno → 192.168.178.2, split horizon) servono:
+Eos (`*.lab.paroparo.it` interno → 192.168.178.2, split horizon) servono:
 - Zona primaria autoritativa per `lab.paroparo.it`
 - Record wildcard gestibile
 - Split horizon (risposta diversa per query interne vs esterne)
@@ -402,7 +295,7 @@ Vedi [04-dns-technitium.md](04-dns-technitium.md) per la configurazione.
 
 ---
 
-## D14 — Backup rclone → Cloudflare R2
+## D10 — Backup rclone → Cloudflare R2
 
 ### Problema
 
@@ -421,9 +314,9 @@ possono ricostruire da Git:
 ```nix
 systemd.services.rclone-backup = {
   serviceConfig.ExecStart = ''
-    rclone sync /var/lib/technitium-dns-server r2:houston-backup/technitium/
-    rclone sync /var/lib/rancher/k3s r2:houston-backup/k3s/
-    rclone sync /home r2:houston-backup/home/
+    rclone sync /var/lib/technitium-dns-server r2:eos-backup/technitium/
+    rclone sync /var/lib/rancher/k3s r2:eos-backup/k3s/
+    rclone sync /home r2:eos-backup/home/
   '';
 };
 systemd.timers.rclone-backup = {
@@ -440,7 +333,7 @@ Configurazione R2 in `secrets/rclone-env.enc.yaml` (cifrato con sops-nix).
 
 ---
 
-## D15 — Alerting channel (ntfy)
+## D11 — Alerting channel (ntfy)
 
 ### Problema
 
@@ -466,7 +359,7 @@ Migra a self-hosted se vuoi eliminare la dipendenza esterna.
 
 ---
 
-## D16 — Dependency updates (Renovate)
+## D12 — Dependency updates (Renovate)
 
 ### Problema
 
@@ -493,41 +386,7 @@ su GitHub.
 
 ---
 
-## D17 — Cilium rimosso → Flannel (bundled k3s)
-
-### Problema
-
-Il bootstrap Cilium su NixOS era fragile per tre ragioni:
-1. **Chicken-and-egg**: k3s parte con Flannel disabilitato (`--flannel-backend=none`),
-   ma senza CNI l'API server non è operativo e helmfile non può eseguire.
-2. **helm-diff plugin**: il path del plugin non era standard in NixOS (store Nix),
-   richiedeva workaround con `HELM_PLUGINS` env var nel servizio systemd.
-3. **Servizio systemd custom** (`k3s-cilium-bootstrap`): un servizio one-shot
-   fragile, difficile da debuggare se falliva in silenzio.
-
-### Scelta: Flannel (CNI bundled)
-
-k3s ha Flannel integrato di default. Non richiede bootstrap esterno, niente
-dipendenze aggiuntive, niente servizi systemd custom.
-
-Su single-node homelab Flannel è più che sufficiente: routing L3 tra pod,
-niente eBPF/NetworkPolicy avanzate necessarie.
-
-### Alternative future
-
-Cilium può essere aggiunto via Flux `HelmRelease` in futuro quando il cluster
-è stabile, senza dipendere da un bootstrap pre-CNI. In quel caso il pattern
-helmfile non è necessario perché Flannel fornisce già rete funzionante durante
-l'installazione di Cilium.
-
-### Rischio a lungo termine
-
-🟢 Basso — Flannel è il CNI di default di k3s, ampiamente testato su
-single-node.
-
----
-
-## D18 — ZFS encryption rimossa
+## D13 — ZFS encryption rimossa
 
 ### Problema
 
@@ -540,7 +399,7 @@ Questo aggiungeva:
 
 ### Threat model reale
 
-Houston è un homelab domestico su rete casuale. Il rischio di furto fisico con
+Astra è un homelab domestico su rete casuale. Il rischio di furto fisico con
 attacco ai dati a disco è trascurabile. I dati sensibili (credenziali,
 certificati) sono già protetti da SOPS + age. La cifratura del filesystem di
 root non aggiungeva protezione pratica.
@@ -565,8 +424,6 @@ ufficio), rivalutare.
 
 ## Note aperte
 
-Non più rilevante — il flake NixOS sostituisce Terraform.
-
 ### CI: kubeconform
 
 Schema Flux già incluso nel catalogo datree. Aggiornamenti futuri dei CRD
@@ -576,7 +433,7 @@ incluso automaticamente.
 
 Da eseguire almeno una volta dopo la migrazione NixOS:
 1. `nix flake check` verde
-2. `nixos-install --flake .#houston` su disco pulito
+2. `nixos-install --flake .#eos` su disco pulito
 3. Verifica che k3s, Flannel, Flux ripartano
 4. Verifica che Technitium risolva `lab.paroparo.it`
 5. Verifica che il backup rclone sia leggibile da R2

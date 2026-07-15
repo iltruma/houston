@@ -1,0 +1,43 @@
+; Zone file BIND per lab.paroparo.it
+; Formato: RFC 1035 — importabile da Technitium DNS via web UI:
+;   Zones → lab.paroparo.it → Import → seleziona questo file
+;
+; Ultima modifica: 2026-07-15
+;
+; Layout rete:
+;   192.168.178.1  iris     Fritz!Box gateway
+;   192.168.178.2  eos  NixOS baremetal (k3s + Traefik + Technitium)
+;   192.168.178.43 taiga    Raspberry Pi 4 (Klipper + Mainsail)
+
+$ORIGIN lab.paroparo.it.
+$TTL 300
+
+; ── SOA ──────────────────────────────────────────────────────────────────────
+@   IN  SOA  ns1.lab.paroparo.it. admin.lab.paroparo.it. (
+                2026071501  ; serial (YYYYMMDDNN)
+                3600        ; refresh
+                900         ; retry
+                604800      ; expire
+                300 )       ; minimum TTL
+
+; ── NS ───────────────────────────────────────────────────────────────────────
+@       IN  NS  ns1.lab.paroparo.it.
+ns1     IN  A   192.168.178.2
+
+; ── Host fisici ──────────────────────────────────────────────────────────────
+eos IN  A   192.168.178.2
+iris    IN  A   192.168.178.1
+taiga   IN  A   192.168.178.43
+
+; ── Wildcard: tutti i servizi k3s via Traefik su eos ─────────────────────
+; Copre automaticamente qualsiasi nuovo servizio deployato su k3s.
+; Record espliciti (sotto) hanno priorità sul wildcard per host non-eos.
+*       IN  A   192.168.178.2
+
+; ── Servizi k3s (ridondanti rispetto al wildcard, espliciti per chiarezza) ───
+uptime      IN  A   192.168.178.2
+homepage    IN  A   192.168.178.2
+beszel      IN  A   192.168.178.2
+
+; ── Servizi su Taiga (override del wildcard → Pi invece di eos) ───────────
+; taiga già definito sopra come host fisico

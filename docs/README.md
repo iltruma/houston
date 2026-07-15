@@ -1,4 +1,4 @@
-# Houston — Documentation Index
+# Astra — Documentation Index
 
 Documentazione operativa del homelab, organizzata per argomento. Per il piano
 completo vedi [`roadmap.md`](roadmap.md). Per le decisioni architetturali vedi
@@ -57,7 +57,7 @@ Per capire *cosa* si sta facendo e *perché*, parti dalla
 - Flux CD (kustomize-controller) decifra i secret SOPS automaticamente al sync;
   le `Kustomization` in `k8s/clusters/iss/` governano l'intero albero
 - Il flake NixOS (`flake.nix`) è l'unica fonte di verità per OS host e servizi
-  NixOS; `nixos-rebuild switch --flake .#houston` applica tutto in modo idempotente
+  NixOS; `nixos-rebuild switch --flake .#eos` applica tutto in modo idempotente
 
 ## Comandi rapidi
 
@@ -66,7 +66,7 @@ Per capire *cosa* si sta facendo e *perché*, parti dalla
 nix flake check
 
 # Applicare modifiche NixOS (da workstation)
-nixos-rebuild switch --flake .#houston --target-host root@192.168.178.2
+nixos-rebuild switch --flake .#eos --target-host root@192.168.178.2
 
 # Stato k3s
 ssh root@192.168.178.2
