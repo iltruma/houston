@@ -13,6 +13,9 @@
   "helm-values": {
     "fileMatch": ["k8s/.+values\\.yaml$"]
   },
+  "nix": {
+    "enabled": true
+  },
   "packageRules": [
     {
       "matchManagers": ["helmv3", "helm-values"],
