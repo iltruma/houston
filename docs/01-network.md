@@ -154,8 +154,10 @@ ss -tlnp | grep -E ':(22|53|80|443|6443)' # porte in ascolto
 
 ## Piano B: VLAN con MikroTik hEX S (Fase 5)
 
-Prerequisito hardware: **MikroTik hEX S 2025** (~69€) come router/gateway
-principale. Fritz!Box 3490 in modalità PPPoE passthrough (bridge VDSL puro).
+Prerequisito hardware:
+- **MikroTik hEX S 2025** (~69€) — router/gateway principale
+- **MikroTik cAP ax** (~129€) — access point WiFi 6, gestito via CAPsMAN dall'hEX S
+- Fritz!Box 3490 in modalità PPPoE passthrough (bridge VDSL puro)
 
 ### Topologia
 
@@ -165,13 +167,20 @@ Internet
 Fritz!Box 3490 (bridge VDSL — solo modem, gestisce tag VLAN 100 Aruba)
     │ Ethernet
     ▼
-hEX S (PPPoE, routing inter-VLAN, DHCP, firewall, WireGuard ingress)
+hEX S (PPPoE, routing inter-VLAN, DHCP, firewall, WireGuard ingress, CAPsMAN)
     ├── Ether1: WAN — PPPoE Aruba (user: aruba, pass: aruba)
     ├── Ether2: trunk 802.1Q → nebula (enp1s0)
     ├── Ether3: access VLAN 10 → workstation admin
-    ├── Ether4: access VLAN 20 → altri device di casa
-    └── Ether5: access VLAN 30 / AP WiFi multi-SSID
+    ├── Ether4: access VLAN 20 → device cablati altri utenti
+    └── Ether5: trunk 802.1Q → cAP ax (+ injector PoE 802.3af)
+                               ├── SSID "home"    → VLAN 10
+                               ├── SSID "family"  → VLAN 20
+                               └── SSID "guest"   → VLAN 30
 ```
+
+> ⚠️ **Alimentazione cAP ax**: usare l'alimentatore diretto incluso nella
+> confezione. Il PoE passivo dell'hEX S (tensione fissa, senza negoziazione
+> 802.3af/at) potrebbe danneggiare il cAP ax se fuori range.
 
 ### Schema VLAN
 

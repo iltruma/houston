@@ -161,18 +161,22 @@ esterno collegato a nebula (vedi [02-storage.md](02-storage.md)).
 
 ## Fase 5 — Rete avanzata (Piano B VLAN)
 
-> **Prerequisito hardware**: MikroTik hEX S 2025 (~69€) come router/gateway
-> principale. Fritz!Box 3490 in PPPoE passthrough (bridge VDSL puro).
+> **Prerequisito hardware**:
+> - **MikroTik hEX S 2025** (~69€) — router/gateway principale
+> - **MikroTik cAP ax** (~129€) — access point WiFi 6, gestito da hEX S via CAPsMAN
+> - Fritz!Box 3490 in PPPoE passthrough (bridge VDSL puro)
+>
 > Senza questo hardware il firewall NixOS (Piano A, già documentato in
 > [01-network.md](01-network.md)) è il livello di isolamento disponibile.
 
 | Sprint | Servizio | Note |
 |---|---|---|
-| S17b | Hardware: hEX S + Fritz bridge | Acquisto hEX S; Fritz!Box 3490 in PPPoE passthrough; PPPoE su hEX S Ether1 |
+| S17b | Hardware: hEX S + cAP ax + Fritz bridge | Acquisto hEX S + cAP ax; Fritz!Box in PPPoE passthrough; PPPoE su hEX S Ether1 |
 | S18  | VLAN segmentation | VLAN 10/20/30 su hEX S; trunk verso nebula; subinterface NixOS; firewall inter-VLAN |
-| S18b | VLAN 40 downloads | Aggiunta VLAN 40 quando si installa qBittorrent (Fase 4) |
+| S18b | WiFi multi-SSID via CAPsMAN | cAP ax gestito da hEX S; SSID per VLAN 10/20/30 |
+| S18c | VLAN 40 downloads | Aggiunta VLAN 40 quando si installa qBittorrent (Fase 4) |
 
-**Schema rete con hEX S:**
+**Schema rete con hEX S + cAP ax:**
 
 ```
 Internet
@@ -180,13 +184,21 @@ Internet
 Fritz!Box 3490 (bridge VDSL puro — solo modem)
     │ Ethernet
     ▼
-hEX S (router, gateway, DHCP, firewall inter-VLAN, WireGuard ingress)
+hEX S (router, gateway, DHCP, firewall inter-VLAN, WireGuard ingress, CAPsMAN)
     ├── Ether1: WAN — PPPoE verso Aruba (VLAN 100 gestita dal Fritz)
     ├── Ether2: trunk 802.1Q → nebula (enp1s0, tutte le VLAN tagged)
     ├── Ether3: access VLAN 10 → workstation admin
-    ├── Ether4: access VLAN 20 → altri device di casa
-    └── Ether5: access VLAN 30 / AP WiFi multi-SSID
+    ├── Ether4: access VLAN 20 → altri device di casa (cablati)
+    └── Ether5: trunk 802.1Q → cAP ax (+ injector PoE 802.3af)
+                               ├── SSID "home"    → VLAN 10
+                               ├── SSID "family"  → VLAN 20
+                               └── SSID "guest"   → VLAN 30
 ```
+
+> ⚠️ **Alimentazione cAP ax**: usare l'alimentatore diretto incluso nella
+> confezione. Il PoE passivo dell'hEX S (Ether5, tensione fissa senza
+> negoziazione) potrebbe danneggiare il cAP ax se fuori range — non testare.
+> Ether5 rimane libero per altri device.
 
 **Schema VLAN target:**
 
