@@ -289,7 +289,17 @@ raggiungibili da VLAN 20 su :443, non su :22.
 
 ---
 
-## Stato struttura repo
+## Fase 7 — VPN egress (opzionale)
+
+> Non necessario finché non installi il download stack (S16). Aggiungere quando serve.
+
+| Sprint | Servizio | Note |
+|--------|----------|------|
+| S19 | Mullvad + Gluetun | Gluetun come container sidecar a qBittorrent in k3s. Mullvad (~5€/mese, no-log, WireGuard nativo). Port forwarding dinamico via API Mullvad, aggiornato automaticamente da Gluetun. |
+
+---
+
+
 
 ```
 flake.nix         Entry point NixOS (pin nixpkgs, sops-nix, disko)
