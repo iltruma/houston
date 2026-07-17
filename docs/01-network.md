@@ -156,7 +156,7 @@ ss -tlnp | grep -E ':(22|53|80|443|6443)' # porte in ascolto
 
 Prerequisito hardware:
 - **MikroTik hEX S 2025** (~69€) — router/gateway principale
-- **MikroTik cAP ax** (~129€) — access point WiFi 6, gestito via CAPsMAN dall'hEX S
+- **MikroTik cAP ax** (~129€) — access point WiFi 6
 - Fritz!Box 3490 in modalità PPPoE passthrough (bridge VDSL puro)
 
 ### Topologia
@@ -167,7 +167,7 @@ Internet
 Fritz!Box 3490 (bridge VDSL — solo modem, gestisce tag VLAN 100 Aruba)
     │ Ethernet
     ▼
-hEX S (PPPoE, routing inter-VLAN, DHCP, firewall, WireGuard ingress, CAPsMAN)
+hEX S (PPPoE, routing inter-VLAN, DHCP, firewall, WireGuard ingress)
     ├── Ether1: WAN — PPPoE Aruba (user: aruba, pass: aruba)
     ├── Ether2: trunk 802.1Q → nebula (enp1s0)
     ├── Ether3: access VLAN 10 → workstation admin
@@ -228,3 +228,18 @@ VLAN 40 → RFC1918            DENY
 
 Gira direttamente su hEX S (RouterOS v7 nativo). I peer remoti entrano in
 VLAN 10 come se fossero fisicamente in LAN. Zero modifiche a nebula.
+
+### cAP ax: standalone vs CAPsMAN
+
+**Parti in modalità standalone** (un solo AP). Configuri VLAN e SSID
+direttamente sul cAP ax — più semplice, stabile, nessuna dipendenza da
+CAPsMAN. Il forum MikroTik lo raccomanda esplicitamente per chi inizia:
+*"Try standalone first, then convert to CAPsMAN when everything works."*
+
+**Quando abilitare CAPsMAN**: solo se aggiungi un secondo AP. Con un AP
+solo, CAPsMAN non aggiunge nulla di pratico rispetto allo standalone.
+
+**Vantaggio del cAP ax su CAPsMAN** (per il futuro): a differenza dei
+modelli AC più vecchi, il cAP ax supporta il VLAN assignment automatico
+via datapath da CAPsMAN — la configurazione è molto più semplice e non
+richiede configurazione manuale delle interfacce WiFi su ogni AP.

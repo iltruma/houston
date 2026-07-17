@@ -163,7 +163,7 @@ esterno collegato a nebula (vedi [02-storage.md](02-storage.md)).
 
 > **Prerequisito hardware**:
 > - **MikroTik hEX S 2025** (~69€) — router/gateway principale
-> - **MikroTik cAP ax** (~129€) — access point WiFi 6, gestito da hEX S via CAPsMAN
+> - **MikroTik cAP ax** (~129€) — access point WiFi 6
 > - Fritz!Box 3490 in PPPoE passthrough (bridge VDSL puro)
 >
 > Senza questo hardware il firewall NixOS (Piano A, già documentato in
@@ -173,8 +173,9 @@ esterno collegato a nebula (vedi [02-storage.md](02-storage.md)).
 |---|---|---|
 | S17b | Hardware: hEX S + cAP ax + Fritz bridge | Acquisto hEX S + cAP ax; Fritz!Box in PPPoE passthrough; PPPoE su hEX S Ether1 |
 | S18  | VLAN segmentation | VLAN 10/20/30 su hEX S; trunk verso nebula; subinterface NixOS; firewall inter-VLAN |
-| S18b | WiFi multi-SSID via CAPsMAN | cAP ax gestito da hEX S; SSID per VLAN 10/20/30 |
+| S18b | WiFi multi-SSID su cAP ax standalone | VLAN per SSID configurate direttamente sul cAP ax (no CAPsMAN) |
 | S18c | VLAN 40 downloads | Aggiunta VLAN 40 quando si installa qBittorrent (Fase 4) |
+| S18d | CAPsMAN (opzionale) | Solo se si aggiunge un secondo AP — non necessario con un solo cAP ax |
 
 **Schema rete con hEX S + cAP ax:**
 
@@ -184,12 +185,12 @@ Internet
 Fritz!Box 3490 (bridge VDSL puro — solo modem)
     │ Ethernet
     ▼
-hEX S (router, gateway, DHCP, firewall inter-VLAN, WireGuard ingress, CAPsMAN)
+hEX S (router, gateway, DHCP, firewall inter-VLAN, WireGuard ingress)
     ├── Ether1: WAN — PPPoE verso Aruba (VLAN 100 gestita dal Fritz)
     ├── Ether2: trunk 802.1Q → nebula (enp1s0, tutte le VLAN tagged)
     ├── Ether3: access VLAN 10 → workstation admin
     ├── Ether4: access VLAN 20 → altri device di casa (cablati)
-    └── Ether5: PoE passivo 24V → cAP ax (AP only, no PoE-out)
+    └── Ether5: PoE passivo 24V → cAP ax (standalone, no PoE-out)
                                ├── SSID "home"    → VLAN 10
                                ├── SSID "family"  → VLAN 20
                                └── SSID "guest"   → VLAN 30
