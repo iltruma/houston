@@ -30,8 +30,11 @@ spec:
       replicas: 1
     ports:
       web:
-        redirectTo:
-          port: websecure
+        http:
+          redirections:
+            entryPoint:
+              to: websecure
+              scheme: https
     providers:
       kubernetesCRD:
         enabled: true
