@@ -7,7 +7,7 @@ spec:
   # Controller layer: installa Traefik e le sue CRD (traefik.io/v1alpha1).
   # Aspetta (wait + healthChecks sul Deployment e sulle CRD) prima di
   # segnalare Ready. Il Kustomization "traefik-config" dipende da questo.
-  interval: 5m
+  interval: 1m
   retryInterval: 5m
   timeout: 10m
   prune: true

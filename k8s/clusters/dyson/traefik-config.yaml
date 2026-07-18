@@ -8,7 +8,7 @@ spec:
   # Dipende da traefik: aspetta che le CRD siano installate.
   dependsOn:
     - name: traefik
-  interval: 5m
+  interval: 1m
   retryInterval: 5m
   timeout: 10m
   prune: true

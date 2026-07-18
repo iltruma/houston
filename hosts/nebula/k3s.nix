@@ -51,7 +51,7 @@
           namespace = "flux-system";
         };
         spec = {
-          interval = "10m";
+          interval = "1m";
           url = "ssh://git@github.com/iltruma/astra";
           ref.branch = "main";
           secretRef.name = "flux-system";  # Secret SSH con identity/identity.pub/known_hosts

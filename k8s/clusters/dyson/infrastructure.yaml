@@ -8,7 +8,7 @@ spec:
   # Dipende da cert-manager: aspetta che le CRD siano installate.
   dependsOn:
     - name: cert-manager
-  interval: 1h
+  interval: 1m
   retryInterval: 5m
   timeout: 10m
   prune: true

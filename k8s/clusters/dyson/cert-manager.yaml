@@ -7,7 +7,7 @@ spec:
   # Controller layer: installa cert-manager e le sue CRD.
   # Aspetta (wait + healthChecks sulle CRD) che siano pronte prima di
   # segnalare Ready. Il Kustomization "infrastructure" dipende da questo.
-  interval: 1h
+  interval: 1m
   retryInterval: 5m
   timeout: 10m
   prune: true

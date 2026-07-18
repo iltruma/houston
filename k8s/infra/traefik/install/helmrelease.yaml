@@ -13,7 +13,7 @@ metadata:
   name: traefik
   namespace: kube-system
 spec:
-  interval: 1h
+  interval: 1m
   chart:
     spec:
       chart: traefik
