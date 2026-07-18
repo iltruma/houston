@@ -16,6 +16,64 @@
     # Override del ConfigMap bundled: delega a Technitium per lab.paroparo.it.
     # services.k3s.manifests piazza il file in /var/lib/rancher/k3s/server/manifests/
     # e lo applica al boot; il nome "coredns" è richiesto da k3s.
+    # Kustomization "dyson" (root): dice a Flux di applicare tutti i Kustomization
+    # che trova in k8s/clusters/dyson/ del repo (infrastructure, apps, ...).
+    # Senza questo, Flux clona il repo ma non sa cosa applicare.
+    manifests."flux-cluster-kustomization" = {
+      content = {
+        apiVersion = "kustomize.toolkit.fluxcd.io/v1";
+        kind = "Kustomization";
+        metadata = {
+          name = "dyson";
+          namespace = "flux-system";
+        };
+        spec = {
+          interval = "10m";
+          path = "./k8s/clusters/dyson";
+          prune = true;
+          sourceRef = {
+            kind = "GitRepository";
+            name = "flux-system";
+          };
+        };
+      };
+    };
+    # GitRepository flux-system: punta al repo GitHub che ospita i Kustomization.
+    # Al primo boot fallirà con "no CRD for GitRepository" perché Flux non è ancora
+    # installato; k3s ritenta automaticamente dopo che il HelmChart qui sotto ha
+    # installato Flux + CRD.
+    manifests."flux-git-repository" = {
+      content = {
+        apiVersion = "source.toolkit.fluxcd.io/v1";
+        kind = "GitRepository";
+        metadata = {
+          name = "flux-system";
+          namespace = "flux-system";
+        };
+        spec = {
+          interval = "10m";
+          url = "ssh://git@github.com/iltruma/astra";
+          ref.branch = "main";
+          secretRef.name = "flux-system";  # Secret SSH con identity/identity.pub/known_hosts
+        };
+      };
+    };
+    # HelmChart Flux: il k3s Helm controller (built-in) installa il chart flux2
+    # della community Flux. Dopo l'install, le 4 CRD Flux sono attive e i
+    # Kustomization in k8s/clusters/dyson/ possono essere applicati.
+    manifests."flux-helmchart" = {
+      content = {
+        apiVersion = "helm.cattle.io/v1";
+        kind = "HelmChart";
+        metadata = { name = "flux2"; namespace = "kube-system"; };
+        spec = {
+          targetNamespace = "flux-system";
+          createNamespace = true;
+          chart = "oci://ghcr.io/fluxcd-community/charts/flux2";
+          version = "2.19.0";
+        };
+      };
+    };
     # Namespace flux-system: k3s non crea namespace implicitamente quando applica
     # i manifest in server/manifests/, quindi va materializzato prima dei Secret.
     # Naming: "flux-namespace" < "flux-secret-*" (n < s) → ordine lessicale garantito.
@@ -81,5 +139,5 @@
 
   networking.firewall.allowedTCPPorts = [ 10250 ]; # kubelet API
 
-  environment.systemPackages = with pkgs; [ k3s ];
+  environment.systemPackages = with pkgs; [ k3s fluxcd];
 }
