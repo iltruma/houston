@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: technitium-web
+  namespace: infra-proxy
+  annotations:
+    # Traefik si connette al backend Technitium via HTTP (Technitium
+    # di default espone solo HTTP su :5380; HTTPS :53443 esiste ma è
+    # bloccato dal firewall per Homelab, gestiamo TLS solo a Traefik).
+    traefik.ingress.kubernetes.io/service.serversscheme: http
+spec:
+  ports:
+    - port: 5380
+      targetPort: 5380
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: technitium-web
+  namespace: infra-proxy
+subsets:
+  # Technitium è un servizio HOST NixOS (non un pod k8s), gira su
+  # 192.168.178.2:5380. Traefik lo raggiunge via hostNetwork.
+  - addresses:
+      - ip: 192.168.178.2
+    ports:
+      - port: 5380
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: technitium-web
+  namespace: infra-proxy
+  annotations:
+    traefik.ingress.kubernetes.io/service.serversscheme: http
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - dns.lab.paroparo.it
+      secretName: wildcard-lab-paroparo-it-tls
+  rules:
+    - host: dns.lab.paroparo.it
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: technitium-web
+                port:
+                  number: 5380

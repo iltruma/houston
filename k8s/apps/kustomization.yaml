@@ -4,4 +4,5 @@ resources:
   - beszel
   - homepage
   - infra-proxy
+  - technitium
   - uptime-kuma

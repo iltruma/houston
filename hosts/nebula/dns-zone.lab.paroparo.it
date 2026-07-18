@@ -23,7 +23,6 @@ $TTL 300
 ; ── NS ───────────────────────────────────────────────────────────────────────
 @       IN  NS  ns1.lab.paroparo.it.
 ns1     IN  A   192.168.178.2
-ns1     IN  AAAA  (vuoto per ora — solo IPv4 nel Fritz!Box attuale)
 
 ; ── Apex (lab.paroparo.it stesso punta a nebula/Traefik) ─────────────────────
 @       IN  A   192.168.178.2
@@ -42,6 +41,7 @@ taiga   IN  A   192.168.178.43
 uptime      IN  A   192.168.178.2
 homepage    IN  A   192.168.178.2
 beszel      IN  A   192.168.178.2
+dns         IN  A   192.168.178.2
 
 ; ── CAA: limita quali CA possono emettere cert per lab.paroparo.it ─────────
 ; Best practice per hardening: blocca CA non autorizzate.

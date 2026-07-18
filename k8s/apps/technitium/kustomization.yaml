@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Esposizione Technitium DNS web UI via Traefik reverse proxy.
+# Technitium resta un servizio host NixOS (non un pod k8s) su :5380.
+# L'Ingress instrada dns.lab.paroparo.it → Traefik → Technitium.
+resources:
+  - technitium-expose.yaml
