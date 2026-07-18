@@ -4,6 +4,10 @@ metadata:
   name: infrastructure
   namespace: flux-system
 spec:
+  # Config layer di cert-manager (ClusterIssuer, Certificate, Secret).
+  # Dipende da cert-manager: aspetta che le CRD siano installate.
+  dependsOn:
+    - name: cert-manager
   interval: 1h
   retryInterval: 5m
   timeout: 10m
@@ -12,7 +16,7 @@ spec:
   sourceRef:
     kind: GitRepository
     name: flux-system
-  path: ./k8s/infra
+  path: ./k8s/infra/cert-manager/config
   decryption:
     provider: sops
     secretRef:

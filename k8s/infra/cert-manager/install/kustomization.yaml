@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Install layer: namespace + HelmRelease per cert-manager.
+# Questo Kustomization applica solo le risorse che installano i controller
+# (e quindi le CRD). Le risorse che dipendono dalle CRD (ClusterIssuer,
+# Certificate, Secret) vanno in config/.
+resources:
+  - namespace.yaml
+  - helmrelease.yaml

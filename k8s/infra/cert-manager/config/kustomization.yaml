@@ -1,0 +1,9 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Config layer: risorse che dipendono dalle CRD di cert-manager.
+# Questo Kustomization viene applicato DOPO che install/ è Ready
+# (vedi dependsOn nel Kustomization Flux in clusters/dyson/infrastructure.yaml).
+resources:
+  - clusterissuer-production.yaml
+  - wildcard-certificate.yaml
+  - secret.enc.yaml
