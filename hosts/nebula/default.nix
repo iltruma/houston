@@ -32,4 +32,8 @@
   };
 
   documentation.enable = false;
+
+  # CLI tool per cluster k3s: navigazione interattiva di pod, log live, stato
+  # risorse. Si lancia da SSH con `k9s`. Sostituisce `kubectl get` ripetuti.
+  environment.systemPackages = [ pkgs.k9s ];
 }
