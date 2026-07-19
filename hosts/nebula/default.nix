@@ -36,4 +36,11 @@
   # CLI tool per cluster k3s: navigazione interattiva di pod, log live, stato
   # risorse. Si lancia da SSH con `k9s`. Sostituisce `kubectl get` ripetuti.
   environment.systemPackages = [ pkgs.k9s ];
+
+  # Dice a k9s/kubectl/flux dove trovare il kubeconfig di k3s. k3s lo scrive
+  # in /etc/rancher/k3s/k3s.yaml con mode 0644 (vedi k3s.nix extraFlags).
+  # Senza questo, k9s dà "Plugins load failed!" perché ~/.kube/config non esiste.
+  environment.sessionVariables = {
+    KUBECONFIG = "/etc/rancher/k3s/k3s.yaml";
+  };
 }
